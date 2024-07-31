@@ -16,9 +16,10 @@ So let's get started.
 
 # Free Architect
 I will try my best to utilize the free tier of AWS resources, below are the resrouces:
+```
 COMPUTE: AWS Lambda, 1 Million free requests per month
 STORAGE: Amazon DynamoDB, 25 GB of storage
 APP INTEGRATION： Amazon SQS 1 Million requests
 SCHEDULE:  Amazon EventBridge Event buses All state change events published by AWS services by default are free
-
-Only a free s3 storage will be used, s3 is cheep~~
+```
+What's more, a little s3 storage is needed. S3 is cheep ~~
