@@ -1,0 +1,6 @@
+boto3
+pytest
+telebot==0.0.5
+bitfinex-api-py==2.0.6
+cachetools==5.3.2
+pandas

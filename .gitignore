@@ -1,0 +1,11 @@
+.env
+package
+target
+layer
+.venv
+*.zip
+.vscode
+__pycache__
+.pytest_cache
+deploy/init.py
+test-i
