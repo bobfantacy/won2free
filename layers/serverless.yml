@@ -3,15 +3,14 @@ org: won2free
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: won2free
 # "service" is the name of this project. This will also be added to your AWS resource names.
-service: layers
+service: won2free-layers
 
 provider:
   name: aws
   runtime: python3.10
+  region: ap-east-1
 
 functions:
-  hello:
-    handler: handler.hello
 
 plugins:
   - serverless-python-requirements
@@ -27,6 +26,9 @@ package:
     - '!serverless.env.yml'
 custom:
   pythonRequirements:
+    invalidateCaches: true
+    pipCmdExtraArgs:
+      - --no-deps
     noDeploy:
       - asyncio
       - pytest

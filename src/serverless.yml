@@ -54,7 +54,7 @@ functions:
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:
-      - ${file(./serverless.env.yml):layer_arn}
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):layer_name}
 resources:
   Resources:
     UsersTable:
