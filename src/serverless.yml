@@ -1,0 +1,82 @@
+org: won2free
+app: won2free
+service: won2free-core
+frameworkVersion: '4'
+
+stages:
+  default:
+    params:
+      tableName: "users-table-${sls:stage}"
+# plugins:
+#   - serverless-python-requirements
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: ap-east-1
+  memorySize: 128
+  timeout: 10
+  versionFunctions: false
+  logRetentionInDays: 7
+  environment:
+    DYNAMODB_TABLE: ${param:tableName}
+    QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+    TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - Effect: Allow
+          Action:
+            - sqs:ReceiveMessage
+            - sqs:SendMessage
+            - sqs:GetQueueUrl
+            - sqs:DeleteMessage
+          Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
+
+functions:
+  job_funding:
+    handler: job/job_funding.lambda_handler
+    # events:
+    #   - schedule: cron(0 * ? * * *)
+  job_trade:
+    handler: job/job_trade.lambda_handler
+    # events:
+    #   - schedule: cron(0 * ? * * *)
+  reactor:
+    handler: reactor/lambda_function.lambda_handler
+    layers:
+      - ${file(./serverless.env.yml):layer_arn}
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${param:tableName}
+package:
+  # Directories and files to include in the deployed package
+  patterns:
+    - "!node_modules"
+    - '!.git/**'
+    - '!.travis.yml'
+    - '!package.json'
+    - '!package-lock.json'
+    - '!requirements.txt'
+    - '!serverless.env.yml'

@@ -23,3 +23,28 @@ APP INTEGRATION： Amazon SQS 1 Million requests
 SCHEDULE:  Amazon EventBridge Event buses All state change events published by AWS services by default are free
 ```
 What's more, a little s3 storage is needed. S3 is cheep ~~
+
+# Installation
+
+## Requirements
+* A AWS key configured locally, see [here](https://serverless.com/framework/docs/providers/aws/guide/credentials/).
+* A Telegram account.
+
+## Installing
+```
+# Install the Serverless Framework
+$ npm install serverless -g
+
+# Install the necessary plugins
+$ npm install
+
+# Get a bot from Telegram, sending this message to @BotFather
+$ /newbot
+
+# Put the token received into a file called serverless.env.yml, like this
+$ cat serverless.env.yml
+TELEGRAM_TOKEN: <your_token>
+
+# Deploy it!
+$ serverless deploy
+```
