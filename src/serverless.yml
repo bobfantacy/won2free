@@ -6,9 +6,13 @@ frameworkVersion: '4'
 stages:
   default:
     params:
-      tableName: "users-table-${sls:stage}"
-# plugins:
-#   - serverless-python-requirements
+      schedule1: ${file(./serverless.env.yml):dev_schedule1}
+      schedule2: ${file(./serverless.env.yml):dev_schedule2}
+      schedule_daily: ${file(./serverless.env.yml):schedule_daily}
+  prod:
+    params:
+      schedule1: ${file(./serverless.env.yml):prod_schedule1}
+      schedule2: ${file(./serverless.env.yml):prod_schedule2}
 
 provider:
   name: aws
@@ -16,10 +20,9 @@ provider:
   region: ap-east-1
   memorySize: 128
   timeout: 10
-  versionFunctions: false
+  versionFunctions: true
   logRetentionInDays: 7
   environment:
-    DYNAMODB_TABLE: ${param:tableName}
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
     TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
   iam:
@@ -33,7 +36,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
-          Resource: "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE}"
+          Resource: "*"
         - Effect: Allow
           Action:
             - sqs:ReceiveMessage
@@ -43,33 +46,21 @@ provider:
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
 
 functions:
-  job_funding:
+  job:
     handler: job/job_funding.lambda_handler
-    # events:
-    #   - schedule: cron(0 * ? * * *)
-  job_trade:
-    handler: job/job_trade.lambda_handler
-    # events:
-    #   - schedule: cron(0 * ? * * *)
+    events:
+      - schedule: ${param:schedule1}
+  job-auto-rate:
+    handler: job/job_autorate.lambda_handler
+    events:
+      - schedule: ${param:schedule_daily}
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:
       - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):layer_name}
-resources:
-  Resources:
-    UsersTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: userId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${param:tableName}
+      - arn:aws:lambda:ap-east-1:839552336658:layer:AWSSDKPandas-Python310:19
+    events:
+      - schedule: ${param:schedule2}
 package:
   # Directories and files to include in the deployed package
   patterns:

@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 sqs = SqsUtils()
 
 def ReArrangeFundingOffer():
-  logger.info("sending ReArrangeFundingOffer message...")
   event = {
     'id': str(uuid.uuid4()),
     'body' : {
@@ -38,12 +37,22 @@ def ReArrangeFundingOffer():
   }
   sqs.send_message(event)
 def GridStrategyOper():
-  logger.info("sending GridCheck message...")
   event = {
     'id': str(uuid.uuid4()),
     'body' : {
       'command' : 'GridCheck',
       'account_name' : 'exchange',
+      'data' : ''
+    }
+  }
+  sqs.send_message(event)
+  
+def AutoFundingRate():
+  event = {
+    'id': str(uuid.uuid4()),
+    'body' : {
+      'command' : 'AutoFundingRate',
+      'account_name' : 'funding',
       'data' : ''
     }
   }

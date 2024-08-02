@@ -40,6 +40,6 @@ custom:
       description: Python requirements lambda layer
       compatibleRuntimes:
         - python3.10
-      licenseInfo: GPLv3
+      licenseInfo: Apache v2
       allowedAccounts:
         - '*'
