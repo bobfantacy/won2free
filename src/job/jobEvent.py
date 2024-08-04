@@ -57,3 +57,12 @@ def AutoFundingRate():
     }
   }
   sqs.send_message(event)
+  event = {
+    'id': str(uuid.uuid4()),
+    'body' : {
+      'command' : 'AutoFundingRate',
+      'account_name' : 'exchange',
+      'data' : ''
+    }
+  }
+  sqs.send_message(event)
