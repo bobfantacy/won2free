@@ -24,7 +24,6 @@ provider:
   logRetentionInDays: 7
   environment:
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
-    TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
   iam:
     role:
       statements:
@@ -36,6 +35,8 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
+            - dynamodb:DescribeTable
+            - dynamodb:CreateTable
           Resource: "*"
         - Effect: Allow
           Action:
@@ -43,9 +44,13 @@ provider:
             - sqs:SendMessage
             - sqs:GetQueueUrl
             - sqs:DeleteMessage
+            - sqs:CreateQueue
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
 
 functions:
+  init:
+    handler: init/lambda_function.lambda_handler
+    timeout: 60
   job:
     handler: job/job_funding.lambda_handler
     events:
@@ -57,10 +62,15 @@ functions:
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:
-      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):layer_name}
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
       - arn:aws:lambda:ap-east-1:839552336658:layer:AWSSDKPandas-Python310:19
     events:
       - schedule: ${param:schedule2}
+    environment:
+      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+    memorySize: 256
+    timeout: 30
 package:
   # Directories and files to include in the deployed package
   patterns:

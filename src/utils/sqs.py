@@ -2,6 +2,7 @@ import boto3
 import os
 import json
 import logging
+from botocore.exceptions import ClientError
 
 class SqsUtils:
   
@@ -46,22 +47,28 @@ class SqsUtils:
   @classmethod
   def create_queue(cls, queue_name, fifo_queue=True, content_based_deduplication=True):
     sqs = boto3.resource('sqs')
+    if fifo_queue and not queue_name.endswith('.fifo'):
+            queue_name += '.fifo'
+            
     try:
+        response = sqs.get_queue_by_name(QueueName=queue_name)
+        print(f"Queue '{queue_name}' already exists. URL: {response.url}")
+        return response.url
+    except ClientError as e:
+      if e.response['Error']['Code'] == 'AWS.SimpleQueueService.NonExistentQueue':
         attributes = {
             'FifoQueue': 'true' if fifo_queue else 'false',
             'ContentBasedDeduplication': 'true' if content_based_deduplication else 'false'
         }
-        if fifo_queue and not queue_name.endswith('.fifo'):
-            queue_name += '.fifo'
         response = sqs.create_queue(
             QueueName=queue_name,
             Attributes=attributes
         )
         print('Queue created successfully, queue URL: {}'.format(response.url))
         return response.url
-    except Exception as e:
-        print('Failed to create queue: {}'.format(e))
-        return None
+      else:
+        raise Exception(f"Error in creating queue {queue_name}")
+      
 if __name__ == '__main__':
-  sqs = SqsUtils()
+  SqsUtils.create_queue('test')
   

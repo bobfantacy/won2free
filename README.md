@@ -30,21 +30,49 @@ What's more, a little s3 storage is needed. S3 is cheep ~~
 * A AWS key configured locally, see [here](https://serverless.com/framework/docs/providers/aws/guide/credentials/).
 * A Telegram account.
 
-## Installing
 ```
-# Install the Serverless Framework
-$ npm install serverless -g
+Get a bot from Telegram, sending this message to @BotFather
+/newbot
+```
+Markwon your own tgbot token.
 
-# Install the necessary plugins
-$ npm install
+## Tooling
+* Node.js 20
+Follow the [Instruction](https://nodejs.org/en/download/package-manager) to install Node.js 20
+* Install Serverless framework
+```
+npm install serverless -g
+```
 
-# Get a bot from Telegram, sending this message to @BotFather
-$ /newbot
+## Deploy the base layers
+A base layers had been created to booster the deploy and test in the development cycle. 
+``` shell
+$ cd layers
+$ npm install 
+$ sls deploy -s prod
+Deploying "won2free-layers" to stage "prod" (ap-east-1)
+✔ Service deployed to stack won2free-layers-prod (29s)
+layers:
+  pythonRequirements: arn:aws:lambda:ap-east-1:xxxxxxxxxx:layer:won2free-python-requirements:1
+```
+Mark down the version number tailing the won2free-python-requirements if it's not 1.
 
+## Deploy Won2Free Bot
+
+``` shell
+$ cd ../src
+# Copy the serverless.env.example.yml to serverless.env.yml
+$ cp serverless.env.example.yml serverless.env.yml
 # Put the token received into a file called serverless.env.yml, like this
-$ cat serverless.env.yml
-TELEGRAM_TOKEN: <your_token>
-
+TG_TOKEN: <your_token>
+# Double Check the layer_name is the same as your just deployed.
+LAYER_NAME: won2free-python-requirements:1
+# And the other variables just keep them as default
 # Deploy it!
-$ serverless deploy
+$ serverless deploy -s prod
+```
+## Init the bot 
+``` shell
+$ serverless invoke -s prod --function init
+"The sqs queue and dynomadb tables have inited success"
 ```
