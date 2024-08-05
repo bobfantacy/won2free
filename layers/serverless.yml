@@ -1,0 +1,45 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: won2free
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: won2free
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: won2free-layers
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: ap-east-1
+
+functions:
+
+plugins:
+  - serverless-python-requirements
+package:
+  # Directories and files to include in the deployed package
+  patterns:
+    - "!node_modules"
+    - '!.git/**'
+    - '!.travis.yml'
+    - '!package.json'
+    - '!package-lock.json'
+    - '!requirements.txt'
+    - '!serverless.env.yml'
+custom:
+  pythonRequirements:
+    invalidateCaches: true
+    pipCmdExtraArgs:
+      - --no-deps
+    noDeploy:
+      - asyncio
+      - pytest
+      - boto3
+      - botocore
+      - s3transfer
+    layer:
+      name: won2free-python-requirements
+      description: Python requirements lambda layer
+      compatibleRuntimes:
+        - python3.10
+      licenseInfo: Apache v2
+      allowedAccounts:
+        - '*'

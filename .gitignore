@@ -1,9 +1,10 @@
 .env
-package
-target
+*/node_modules
+*/.serverless
+.serverless
+*/serverless.env.yml
 layer
 .venv
-*.zip
 .vscode
 __pycache__
 .pytest_cache
