@@ -1,9 +1,7 @@
 boto3
 pytest
-# telebot==0.0.5
-# python-telegram-bot
 pyTelegramBotAPI==4.21.0
 bitfinex-api-py==2.0.6
 cachetools==5.3.2
-jwt
+pyjwt
 #pandas

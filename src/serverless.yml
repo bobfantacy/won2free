@@ -22,7 +22,7 @@ provider:
   timeout: 10
   versionFunctions: true
   logRetentionInDays: 7
-  architecture: arm64 
+  # architecture: arm64 
   environment:
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
   iam:
@@ -53,6 +53,7 @@ functions:
     handler: tgbot.auth.auth
     layers:
       - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+      - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
     events:
       - http: POST /auth/telegram
     environment:
