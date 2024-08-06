@@ -28,7 +28,12 @@ custom:
   pythonRequirements:
     invalidateCaches: true
     pipCmdExtraArgs:
-      - --no-deps
+      - "--no-deps"
+      - "--platform manylinux2014_x86_64"
+      - "--implementation cp"
+      - "--python 3.10"
+      - "--only-binary=:all:"
+      - "--upgrade"
     noDeploy:
       - asyncio
       - pytest

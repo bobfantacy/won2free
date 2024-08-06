@@ -22,6 +22,7 @@ provider:
   timeout: 10
   versionFunctions: true
   logRetentionInDays: 7
+  architecture: arm64 
   environment:
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
   iam:
@@ -48,6 +49,34 @@ provider:
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
 
 functions:
+  tg_auth:
+    handler: tgbot.auth.auth
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+    events:
+      - http: POST /auth/telegram
+    environment:
+      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+  webhook:
+    handler: tgbot.handler.webhook
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+    events:
+      - http: POST /
+    environment:
+      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+
+  set_webhook:
+    handler: tgbot.handler.set_webhook
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+    events:
+      - http: POST /set_webhook
+    environment:
+      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
   init:
     handler: init/lambda_function.lambda_handler
     timeout: 60

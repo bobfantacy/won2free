@@ -1,7 +1,7 @@
 import io
 import os
-import telebot
 import json
+import telebot
 from telebot import types
 from queue import Queue
 
@@ -25,6 +25,9 @@ class TelebotUtils:
         self._account_map[account.account_name] = account
       self.teleBot = telebot.TeleBot(os.getenv('TG_TOKEN'))
       self._inited = True
+      
+  def set_webhook(self, url):
+    return self.teleBot.set_webhook(url)
     
   def buffer_message(self, account_name, message):
     if(message!=''):
