@@ -1,7 +1,12 @@
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
+import random
+import time
 
+def key_generate():
+  timestamp = int(time.time())
+  return timestamp*10000+random.randint(1, 9999)
 
 class Storage():
   '''
@@ -164,6 +169,19 @@ class Storage():
     }
     response = table.scan(**scan_kwargs)
     return response.get('Items', [])
+  def loadItemById(self, table_name, id_key, id_val):
+        table = self.dynamodb.Table(table_name)
+        response = table.get_item(
+            Key={
+                id_key: id_val
+            }
+        )
+        return response.get('Item')
+  def loadObjectById(self, cls, item_id):
+    if not hasattr(cls, "__tablename__"):
+      raise Exception("Object must have __tablename__ attribute")
+    item = self.loadItemById(cls.__tablename__, cls.__pkey__, item_id)
+    return cls.from_dict(item) if item else None
   
   def _is_array(self, variable):
     return isinstance(variable, list)

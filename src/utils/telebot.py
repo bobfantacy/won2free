@@ -33,7 +33,7 @@ class TelebotUtils:
     if(message!=''):
       self._msgBufs[account_name].put(message)
       
-  def send_message(self, account_name, message = '', command = '', chat_id = None, thread_id = None ):
+  def send_message(self, account_name, message = ''):
     if(message!=''):
       self._msgBufs[account_name].put(message)
     
@@ -45,16 +45,6 @@ class TelebotUtils:
       message = buffer.getvalue()
       size = 4096
       msgs = [message[i:i+size] for i in range(0, len(message), size)]
-      if chat_id is not None:
-        for msg in msgs:
-          self.teleBot.send_message(chat_id, 
-                                  text = msg,
-                                  message_thread_id = thread_id)
-      else:
-        account = self._account_map[account_name]
-        groups = json.loads(account.extra)['group']
-        for group in groups:
-          chat_id = group['chat_id']
-          thread_id = group['onChannel'].get(command) if group['onChannel'].get(command) else group['onChannel'].get('default')
-          for msg in msgs:
-            self.teleBot.send_message(chat_id, text = msg, message_thread_id = thread_id)
+      account = self._account_map[account_name]
+      for msg in msgs:
+        self.teleBot.send_message(account.user_id, text = msg)

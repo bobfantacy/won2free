@@ -76,3 +76,6 @@ $ serverless deploy -s prod
 $ serverless invoke -s prod --function init
 "The sqs queue and dynomadb tables have inited success"
 ```
+
+# References:
+* https://github.com/keithrozario/Klayers

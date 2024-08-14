@@ -16,5 +16,6 @@ class BaseModel(ABC):
     def from_dict(cls, data):
         instance = cls()
         for key, value in data.items():
-            setattr(instance, key, value)
+            if hasattr(instance, key):
+                setattr(instance, key, value)
         return instance

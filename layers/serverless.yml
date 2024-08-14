@@ -43,8 +43,12 @@ custom:
     layer:
       name: won2free-python-requirements
       description: Python requirements lambda layer
+      retain: true
       compatibleRuntimes:
         - python3.10
+      compatibleArchitectures:
+        - x86_64
+        - arm64
       licenseInfo: Apache v2
       allowedAccounts:
         - '*'

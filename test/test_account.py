@@ -24,8 +24,7 @@ class TestAccount(unittest.TestCase):
         bfx_secret='example_secret',
         affiliate_code='example_code',
         create_time='2023-01-01T00:00:00Z',
-        update_time='2023-01-01T00:00:00Z',
-        extra={'key': 'value'}
+        update_time='2023-01-01T00:00:00Z'
     )
     account2 = Account(
         id=2,
@@ -34,8 +33,7 @@ class TestAccount(unittest.TestCase):
         bfx_secret='example_secret2',
         affiliate_code='example_code2',
         create_time='2023-01-01T00:00:00Z',
-        update_time='2023-01-01T00:00:00Z',
-        extra={'key': 'value'}
+        update_time='2023-01-01T00:00:00Z'
     )
     
     self.storage.save(self.table_name, account1.to_dict())
@@ -61,8 +59,7 @@ class TestAccount(unittest.TestCase):
         bfx_secret='example_secret',
         affiliate_code='example_code',
         create_time='2023-01-01T00:00:00Z',
-        update_time='2023-01-01T00:00:00Z',
-        extra={'key': 'value'}
+        update_time='2023-01-01T00:00:00Z'
     )
     account2 = Account(
         id=2,
@@ -71,8 +68,7 @@ class TestAccount(unittest.TestCase):
         bfx_secret='example_secret2',
         affiliate_code='example_code2',
         create_time='2023-01-01T00:00:00Z',
-        update_time='2023-01-01T00:00:00Z',
-        extra={'key': 'value'}
+        update_time='2023-01-01T00:00:00Z'
     )
     
     self.storage.saveObject(account1)

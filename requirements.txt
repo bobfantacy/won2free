@@ -3,5 +3,10 @@ pytest
 pyTelegramBotAPI==4.21.0
 bitfinex-api-py==2.0.6
 cachetools==5.3.2
-pyjwt
-#pandas
+pyjwt==2.9.0
+
+# Below dependencies should import from other layers.
+# arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
+cryptography==43.0.0
+# arn:aws:lambda:ap-east-1:839552336658:layer:AWSSDKPandas-Python310:19
+pandas==2.2.2

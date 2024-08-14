@@ -22,7 +22,7 @@ provider:
   timeout: 10
   versionFunctions: true
   logRetentionInDays: 7
-  # architecture: arm64 
+  # versioning: true
   environment:
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
   iam:
@@ -49,16 +49,92 @@ provider:
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
 
 functions:
-  tg_auth:
-    handler: tgbot.auth.auth
+  get_accounts:
+    handler: httpapi.account.get_accounts
+    events:
+      - http:
+          path: api/accounts
+          method: get
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+  save_account:
+    handler: httpapi.account.save_account
+    events:
+      - http:
+          path: api/save_accounts
+          method: POST
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+  del_account:
+    handler: httpapi.account.del_account
+    events:
+      - http:
+          path: api/del_account
+          method: POST
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+  jwt_auth:
+    handler: httpapi.jwt_auth.auth
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+      - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
+    environment:
+      JWT_SECRET: ${file(./serverless.env.yml):JWT_SECRET}
+    # cors: true
+  publicEndpoint:
+    handler: httpapi.jwt_auth.public_endpoint
+    events:
+      - http:
+          path: api/public
+          method: post
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+      - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
+  privateEndpoint:
+    handler: httpapi.jwt_auth.private_endpoint
+    events:
+      - http:
+          path: api/private
+          method: get
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+      - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
+  tg_login_auth:
+    handler: tgbot.tg_login_auth.auth
     layers:
       - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
       - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
     events:
-      - http: POST /auth/telegram
+      - http: 
+          cors: true
+          method: post
+          path: /auth/telegram
     environment:
       QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+      JWT_SECRET: ${file(./serverless.env.yml):JWT_SECRET}
+  tg_miniapp_auth:
+    handler: tgbot.tg_miniapp_auth.auth
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+      - arn:aws:lambda:ap-east-1:770693421928:layer:Klayers-p310-cryptography:14
+    events:
+      - http: 
+          cors: true
+          method: post
+          path: /auth/miniapp
+    environment:
+      TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+      JWT_SECRET: ${file(./serverless.env.yml):JWT_SECRET}
   webhook:
     handler: tgbot.handler.webhook
     layers:
@@ -68,6 +144,7 @@ functions:
     environment:
       QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
+      MINIAPP_URL: ${file(./serverless.env.yml):MINIAPP_URL}
 
   set_webhook:
     handler: tgbot.handler.set_webhook
@@ -95,7 +172,7 @@ functions:
       - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
       - arn:aws:lambda:ap-east-1:839552336658:layer:AWSSDKPandas-Python310:19
     events:
-      - schedule: ${param:schedule2}
+      - sqs: arn:aws:sqs:${aws:region}:${aws:accountId}:${file(./serverless.env.yml):QUEUE_NAME}
     environment:
       QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
@@ -111,3 +188,25 @@ package:
     - '!package-lock.json'
     - '!requirements.txt'
     - '!serverless.env.yml'
+# resources:
+#   Resources:
+#     GatewayResponse:
+#       Type: 'AWS::ApiGateway::GatewayResponse'
+#       Properties:
+#         ResponseParameters:
+#           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+#           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+#         ResponseType: EXPIRED_TOKEN
+#         RestApiId:
+#           Ref: 'ApiGatewayRestApi'
+#         StatusCode: '401'
+#     AuthFailureGatewayResponse:
+#       Type: 'AWS::ApiGateway::GatewayResponse'
+#       Properties:
+#         ResponseParameters:
+#           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+#           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+#         ResponseType: UNAUTHORIZED
+#         RestApiId:
+#           Ref: 'ApiGatewayRestApi'
+#         StatusCode: '401'

@@ -45,8 +45,6 @@ class AbstractAction(ABC):
       pass
       
   def _before_execute(self, event_body):
-    self.chat_id = event_body.get('chat_id')
-    self.thread_id = event_body.get('thread_id')
     self.command = event_body.get('command')
     self.account_name = event_body['account_name']
     self.bfx = self.context.bfxs[self.account_name]
@@ -136,10 +134,7 @@ class AbstractAction(ABC):
       raise Exception(e)
     
   def flush_message(self):
-    if self.chat_id:
-      self.teleBot.send_message(self.account_name, message = '', command = self.command, chat_id = self.chat_id, thread_id = self.thread_id )
-    else:  
-      self.teleBot.send_message(self.account_name, message = '', command = self.command, chat_id = None, thread_id = None )
+    self.teleBot.send_message(self.account_name, message = '')
       
   def buffer_message(self, message):
     self.teleBot.buffer_message(self.account_name, message)

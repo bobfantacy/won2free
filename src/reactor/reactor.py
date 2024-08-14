@@ -28,10 +28,11 @@ class Reactor():
        BotActionAutoFundingRate()
     ]
 
-  async def processQueue(self):
+  async def processQueue(self, messages):
     sqs = SqsUtils()
     # Receive message
-    messages = sqs.receive_messages(10)
+    if len(messages)==0:
+      messages = sqs.receive_messages(10)
     logger.info(f"Starting Reactor...")
     #if the queue is full, just keep run
     while len(messages)!=0:
