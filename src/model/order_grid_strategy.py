@@ -7,7 +7,8 @@ class OrderGridStrategy(BaseModel):
   __pkeytype__ = 'N'
   
   id : None
-  account_id : None
+  account_id : int = 0
+  user_id : int = 0  # telegram user id
   symbol : None
   initial_base_price : None
   latest_base_price : None

@@ -1,13 +1,16 @@
 import logging
 import json
 from utils.sqs import SqsUtils
+from utils.global_context import GlobalContext
 from reactor.BotActionReArrangeOffer import BotActionReArrangeOffer
 from reactor.BotActionGridStrategyOper import BotActionGridStrategyOper
 from reactor.BotActionSyncTrade import BotActionSyncTrade
 from reactor.BotActionAutoFundingRate import BotActionAutoFundingRate
-
+from reactor.BotActionBuy import BotActionBuy
+from reactor.BotActionSell import BotActionSell
 
 from decimal import Decimal, getcontext, Inexact, Rounded
+context = GlobalContext()
 
 logging.basicConfig(
     format='%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d]: %(message)s',
@@ -25,7 +28,9 @@ class Reactor():
        BotActionReArrangeOffer(),
        BotActionGridStrategyOper(),
        BotActionSyncTrade(),
-       BotActionAutoFundingRate()
+       BotActionAutoFundingRate(),
+       BotActionBuy(),
+       BotActionSell()
     ]
 
   async def processQueue(self, messages):
@@ -43,6 +48,10 @@ class Reactor():
           body = event_msg['body']
           command = body['command']
           account_name = body['account_name']
+          if context.accounts.get(account_name) is None:
+            logger.error(f"Account not found: {account_name}")
+            message.delete()
+            continue
           missMatched = True
           for action in self.botEventActions:
             if(action.match(command)):

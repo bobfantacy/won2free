@@ -10,6 +10,7 @@ class TradeOrder(BaseModel):
     
     id : int = 0
     account_id : int = 0
+    user_id : int = 0  # telegram user id
     gid = None
     cid = None
     symbol : str = ''

@@ -11,6 +11,7 @@ class SyncTick(BaseModel):
     __pkeytype__ = 'N'
     
     account_id : int = 0
+    user_id : int = 0  # telegram user id
     trade_last_sync : int = 0 # the last sync timestamp
     order_history_last_sync : int = 0
     loan_last_sync: int = 0

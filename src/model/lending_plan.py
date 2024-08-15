@@ -8,7 +8,8 @@ class LendingPlan(BaseModel):
     __pkeytype__ = 'N'
 
     id = None
-    account_id = None
+    account_id : int = 0
+    user_id : int = 0  # telegram user id
     symbol = None
     start_rate = None
     end_rate : Decimal = Decimal(0)

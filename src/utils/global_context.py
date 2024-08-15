@@ -57,21 +57,9 @@ class GlobalContext:
   def getBfx(self, account_name):
     return self.bfxs[account_name]
       
-  def getAccountByChatId(self, chat_id):
-    for key, account in self.accounts.items():
-      if(account.checkChatId(chat_id)):
-        return account
-    return None
-  
-  def getAccountNameByChatId(self, chat_id):
-    for key, account in self.accounts.items():
-      if(account.checkChatId(chat_id)):
-        return key
-    return None
 
-  def checkChatId(self, chat_id):
-    for key, account in self.accounts.items():
-      if(account.checkChatId(chat_id)):
+  def checkUserIdVsAccountId(self, user_id, account_id):
+    for account in self.accounts.values():
+      if account.user_id == user_id and account.id == account_id:
         return True
     return False
-  

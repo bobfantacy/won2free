@@ -176,6 +176,8 @@ class AbstractAction(ABC):
       for o in response.notify_info:
         # each item is in the form of an Order object
         order = TradeOrder.from_bfx_order(o)
+        order.user_id = self.account.user_id
+        order.account_id = self.account.id
         order.strategy_id = strategy_id
         order.oper_count = oper_count
         self.storage.saveObject(order)

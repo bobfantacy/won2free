@@ -23,11 +23,11 @@ class TelebotUtils:
       for account in accounts:
         self._msgBufs[account.account_name] =  Queue()
         self._account_map[account.account_name] = account
-      self.teleBot = telebot.TeleBot(os.getenv('TG_TOKEN'))
+      self._teleBot = telebot.TeleBot(os.getenv('TG_TOKEN'), threaded=False)
       self._inited = True
       
   def set_webhook(self, url):
-    return self.teleBot.set_webhook(url)
+    return self._teleBot.set_webhook(url)
     
   def buffer_message(self, account_name, message):
     if(message!=''):
@@ -39,6 +39,8 @@ class TelebotUtils:
     
     if(not self._msgBufs[account_name].empty()):
       buffer = io.StringIO()
+      title = f"Message from Account {account_name}:\n"
+      buffer.write(title)
       while not self._msgBufs[account_name].empty():
         buffer.write(self._msgBufs[account_name].get())
         buffer.write("\n")
@@ -47,4 +49,4 @@ class TelebotUtils:
       msgs = [message[i:i+size] for i in range(0, len(message), size)]
       account = self._account_map[account_name]
       for msg in msgs:
-        self.teleBot.send_message(account.user_id, text = msg)
+        self._teleBot.send_message(account.user_id, text = msg)

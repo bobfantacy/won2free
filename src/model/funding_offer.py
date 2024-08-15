@@ -9,7 +9,8 @@ class FundingOffer(BaseModel):
     __pkeytype__ = 'N'
     
     id = None
-    account_id = None
+    account_id : int = 0
+    user_id : int = 0  # telegram user id
     lp_id = None
     symbol = None
     mts_created = None

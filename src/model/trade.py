@@ -10,6 +10,7 @@ class Trade(BaseModel):
     
     id = None
     account_id : int = 0
+    user_id : int = 0  # telegram user id
     pair : str = ''
     mts_create = None
     order_id : int = 0

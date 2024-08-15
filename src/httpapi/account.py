@@ -24,7 +24,7 @@ def get_accounts(event, context):
     accounts = storage.loadObjects(Account, filter_lambda)
     sanitized_accounts = [sanitize_account(account).to_dict() for account in accounts]
     logger.info(f"accounts: {sanitized_accounts}")
-    return create_200_response({'data' : sanitized_accounts})
+    return create_200_response(sanitized_accounts)
 
 def save_account(event, context):
     logger.info('Event: {}'.format(event))
@@ -45,7 +45,7 @@ def save_account(event, context):
             account_id = account_data.get('id')
             if account_id is None or account_id.strip() == "":
                 
-                filter_lambda = lambda Attr: Attr('user_id').eq(user_id) and Attr('account_name').eq(account.account_name)
+                filter_lambda = lambda Attr: Attr('account_name').eq(account.account_name)
                 accounts = storage.loadObjects(Account, filter_lambda)
                 if accounts:
                     return create_400_response({'message': 'account name already existed!'})

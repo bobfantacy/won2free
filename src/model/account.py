@@ -7,8 +7,8 @@ class Account(BaseModel):
     __pkey__ = 'id'
     __pkeytype__ = 'N'
     
-    id: int = None
-    user_id : int = None  # telegram user id
+    id: int = 0
+    user_id : int = 0  # telegram user id
     account_name = None
     bfx_key = None
     bfx_secret = None

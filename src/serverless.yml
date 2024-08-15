@@ -21,7 +21,7 @@ provider:
   memorySize: 128
   timeout: 10
   versionFunctions: true
-  logRetentionInDays: 7
+  logRetentionInDays: 3
   # versioning: true
   environment:
     QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
@@ -49,6 +49,36 @@ provider:
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
 
 functions:
+  get_lending_plans:
+    handler: httpapi.lending_plan.get_lending_plans
+    events:
+      - http:
+          path: api/get_lending_plans
+          method: post
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
+  save_lending_plan:
+    handler: httpapi.lending_plan.save_lending_plan
+    events:
+      - http:
+          path: api/save_lending_plan
+          method: post
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}      
+  del_lending_plan:
+    handler: httpapi.lending_plan.del_lending_plan
+    events:
+      - http:
+          path: api/del_lending_plan
+          method: post
+          authorizer: jwt_auth
+          cors: true
+    layers:
+      - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}      
   get_accounts:
     handler: httpapi.account.get_accounts
     events:

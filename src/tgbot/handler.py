@@ -26,10 +26,11 @@ ERROR_RESPONSE = {
     'statusCode': 400,
     'body': json.dumps('Oops, something went wrong!')
 }
+context = GlobalContext()
+bot = context.teleBot._teleBot
+sqs = context.sqs
 
-bot = telebot.TeleBot(os.getenv('TG_TOKEN'),threaded=False)
 MINIAPP_URL = os.getenv('MINIAPP_URL')
-sqs = SqsUtils()
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
@@ -99,33 +100,43 @@ def send_exchange(message):
     
 @bot.message_handler(commands=['echo'])
 def echo_message(message):
-    
     bot.reply_to(message, f"thread_id: {message.message_thread_id} chat_id: {message.chat.id} text: {message.text} user_id: {message.from_user.id}")
     
-@bot.message_handler(commands=[
-                              'balance',
-                              'lending_plan',
-                              'on',
-                              'funding_offer','funding_history','funding_credit','funding_loan',
-                              'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
-                              'buy','sell','orders','cancelOrder','updateOrder','createGrid',
-                              'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
-def bot_action(self, message):
+# @bot.message_handler(commands=[
+#                               'balance',
+#                               'lending_plan',
+#                               'on',
+#                               'funding_offer','funding_history','funding_credit','funding_loan',
+#                               'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
+#                               'buy','sell','orders','cancelOrder','updateOrder','createGrid',
+#                               'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
+@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate'])
+def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
-    command, account_name, *args = message.text.split()
-    command = command[1:]
-    # toUpperCase 
-    # self.bot.reply_to(message, f"你输入的命令是:{command}")
-    event = {
-        'id': str(uuid.uuid4()),
-        'body' : {
-            'chat_id' : message.chat.id,
-            'message_thread_id':message.message_thread_id,
-            'account_name' : account_name,
-            'data' : args
+    
+    if not checkUserId(message):
+        bot.reply_to(message, 'You are NOT authorized!')
+        return 
+    try:
+        command, account_name, *args = message.text.split()
+
+        account = context.accounts.get(account_name)
+        if not account or account.user_id != message.from_user.id:
+            bot.reply_to(message, f'NOT Found account name: {account_name}')
+            return
+        command = command[1:]
+        event = {
+            'id': str(uuid.uuid4()),
+            'body' : {
+                'command' : command,
+                'user_id': message.from_user.id, 
+                'account_name' : account_name,
+                'data' : args
+            }
         }
-    }
-    sqs.send_message(event)
+        sqs.send_message(event)
+    except Exception as e:
+        bot.reply_to(message, 'something went wrong!')
     
 def webhook(event, context):
     """
@@ -140,6 +151,13 @@ def webhook(event, context):
             bot.process_new_messages([message])
         return OK_RESPONSE
     return ERROR_RESPONSE
+
+def checkUserId(message):
+    user_id = message.from_user.id
+    for account in context.accounts.values():
+        if account.user_id == user_id:
+            return True
+    return False
 
 def set_webhook(event, context):
     """
