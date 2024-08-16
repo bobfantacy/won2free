@@ -116,14 +116,15 @@ class AbstractAction(ABC):
     try:
       # response = await self.bfx.rest.submit_update_order(order_id, price=price, amount=amount,
       #                                                    aff_code=self.account.affiliate_code)
-      response = await self.submit_update_order(order_id, price=price, amount=amount)
+      response = await self.submit_update_order(int(order_id), price=price, amount=amount)
       if(response.status == 'SUCCESS'):
         o = response.notify_info
         # each item is in the form of an Order object
         order = TradeOrder.from_bfx_order(o)
+        order.user_id = self.account.user_id
+        order.account_id = self.account.id
         order.strategy_id = strategy_id
         order.oper_count = oper_count
-        
         self.storage.saveObject(order)
         self.buffer_message(f"Update Order: {order.symbol}, {amount:.6f}, {price:6.0f}")
       else:
