@@ -5,6 +5,8 @@ import os
 import random
 
 from utils.sqs import SqsUtils
+from utils.storage import Storage
+from model.account import Account
 import uuid
 
 
@@ -16,53 +18,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 sqs = SqsUtils()
+storage = Storage()
 
 def ReArrangeFundingOffer():
-  event = {
-    'id': str(uuid.uuid4()),
-    'body' : {
-      'command' : 'ReArrangeOffer',
-      'account_name' : 'funding',
-      'data' : ''
-    }
-  }
-  sqs.send_message(event)
-  event = {
-    'id': str(uuid.uuid4()),
-    'body' : {
-      'command' : 'ReArrangeOffer',
-      'account_name' : 'exchange',
-      'data' : ''
-    }
-  }
-  sqs.send_message(event)
+  command = 'ReArrangeOffer'
+  commandEvent(command)
+  
 def GridStrategyOper():
-  event = {
-    'id': str(uuid.uuid4()),
-    'body' : {
-      'command' : 'TradeStatusCheck',
-      'account_name' : 'exchange',
-      'data' : ''
-    }
-  }
-  sqs.send_message(event)
+  command = 'TradeStatusCheck'
+  commandEvent(command)
   
 def AutoFundingRate():
-  event = {
-    'id': str(uuid.uuid4()),
-    'body' : {
-      'command' : 'AutoFundingRate',
-      'account_name' : 'funding',
-      'data' : ''
+  command = 'AutoFundingRate'
+  commandEvent(command)
+  
+
+def commandEvent(command):
+  accounts = storage.loadAllObjects(Account)
+  for account in accounts:
+    event = {
+      'id': str(uuid.uuid4()),
+      'body' : {
+        'command' : command,
+        'account_name' : account.account_name,
+        'data' : ''
+      }
     }
-  }
-  sqs.send_message(event)
-  event = {
-    'id': str(uuid.uuid4()),
-    'body' : {
-      'command' : 'AutoFundingRate',
-      'account_name' : 'exchange',
-      'data' : ''
-    }
-  }
-  sqs.send_message(event)
+    sqs.send_message(event)
+
+AutoFundingRate()
