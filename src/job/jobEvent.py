@@ -40,7 +40,7 @@ def GridStrategyOper():
   event = {
     'id': str(uuid.uuid4()),
     'body' : {
-      'command' : 'GridCheck',
+      'command' : 'TradeStatusCheck',
       'account_name' : 'exchange',
       'data' : ''
     }

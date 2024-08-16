@@ -54,6 +54,7 @@ def save_account(event, context):
                 account.user_id = user_id
                 account.create_time = datetime.now().isoformat()
                 account.update_time = datetime.now().isoformat()
+                account.affiliate_code = 'mBkll4Et-'
                 storage.saveObject(account)
                 return create_200_response({'message': 'Account saved successfully', 'id': account.id})
             else:
@@ -102,5 +103,6 @@ def del_account(event, context):
 def sanitize_account(account): 
     account.bfx_key = account.bfx_key[:6] + '***' + account.bfx_key[-4:]
     account.bfx_secret = account.bfx_secret[:6] + '***' + account.bfx_secret[-4:]
+    account.affiliate_code = None
 
     return account

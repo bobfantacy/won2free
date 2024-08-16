@@ -12,11 +12,16 @@ logger = logging.getLogger(__name__)
 
 class BotActionGridStrategyOper(AbstractAction):
   def __init__(self):
-    super().__init__(commands=['GridCheck'])
+    super().__init__(commands=['TradeStatusCheck'])
     
   async def _execute(self, event_body):
-    # get all placed orders 
-    orders = self.storage.loadAllObjects(TradeOrder)
+
+    filter_lambda = lambda Attr: Attr('account_id').eq(self.account.id)
+    orders = self.storage.loadObjects(TradeOrder, filter_lambda)
+    
+    if not orders:
+      return
+    
     orderIds = [int(o.id) for o in orders ]
     
     executedBfxOrders = await self.get_bfx_order_history(ids = orderIds)
@@ -26,6 +31,7 @@ class BotActionGridStrategyOper(AbstractAction):
         if executedTradeOrder.id == order.id:
           executedTradeOrder.strategy_id = order.strategy_id
           executedTradeOrder.oper_count = order.oper_count
+          break
       await self.processOrderExecuted(orders, executedTradeOrder)
 
   def get_active_grid_stragegy(self, strategy_id):
@@ -33,7 +39,7 @@ class BotActionGridStrategyOper(AbstractAction):
     items = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
     itemsLen = len(items)
     if itemsLen != 1:
-      raise Exception(f"CAN'T found or found more than one grid stragegy or , id:{strategy_id}")
+      return None
     else:
       return items[0]
   def get_opposite_order(self, orders, order):
@@ -43,7 +49,11 @@ class BotActionGridStrategyOper(AbstractAction):
     return None
     
   async def processOrderExecuted(self, orders, executedTradeOrder):
-    if executedTradeOrder.status == 'CANCEL':
+    if executedTradeOrder.status == 'CANCELED':
+      self.storage.deleteObject(executedTradeOrder)
+      return
+    if executedTradeOrder.strategy_id == 0: # not belong to any strategy
+      self.buffer_message(f"Order {executedTradeOrder.id} {executedTradeOrder.symbol} {executedTradeOrder.amount_orig:.6f} {executedTradeOrder.price_avg:5.0f} executed!")  
       self.storage.deleteObject(executedTradeOrder)
       history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
       self.storage.saveObject(history)
@@ -53,10 +63,13 @@ class BotActionGridStrategyOper(AbstractAction):
     
     grid = self.get_active_grid_stragegy(executedTradeOrder.strategy_id)
     
+    if not grid:
+      self.buffer_message(f"Grid Stragegy {executedTradeOrder.strategy_id} is NOT found!")
+      return
+    
     if(grid.status != 'executing'):
       self.buffer_message(f"Grid Stragegy {grid.id} is NOT executing!")
       return
-    
     
     grid.latest_base_price = executedTradeOrder.price_avg
     
