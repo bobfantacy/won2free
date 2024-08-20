@@ -36,6 +36,6 @@ class BotActionAutoFundingRate(AbstractAction):
     self.buffer_message(f"  id: {lp.id}, {lp.symbol} P: {lp.period} SR: {lp.start_rate:.5f}, ER: {lp.end_rate:.5f}, RG: {lp.rate_gap:.5f} by {lp.days} days")
     
   def getActiveLendingPlans(self):
-    filter_lambda = lambda Attr: Attr('status').eq('ACTIVE') & Attr('account_id').eq(self.account.id)
+    filter_lambda = lambda Attr: Attr('status').eq('ACTIVE') & Attr('account_id').eq(self.account.id) & Attr('auto_update').eq(1)
     lps = self.storage.loadObjects(LendingPlan, filter_lambda) 
     return lps

@@ -188,12 +188,16 @@ functions:
   init:
     handler: init/lambda_function.lambda_handler
     timeout: 60
-  job:
-    handler: job/job_funding.lambda_handler
+  job-TradeStatusCheck:
+    handler: job.jobEvent.TradeStatusCheck
     events:
       - schedule: ${param:schedule1}
-  job-auto-rate:
-    handler: job/job_autorate.lambda_handler
+  job-ReArrangeOffer:
+    handler: job.jobEvent.ReArrangeOffer
+    events:
+      - schedule: ${param:schedule1}
+  job-AutoFundingRate:
+    handler: job.jobEvent.AutoFundingRate
     events:
       - schedule: ${param:schedule_daily}
   reactor:

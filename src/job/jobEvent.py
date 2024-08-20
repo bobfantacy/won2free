@@ -20,15 +20,15 @@ logger = logging.getLogger(__name__)
 sqs = SqsUtils()
 storage = Storage()
 
-def ReArrangeFundingOffer():
+def ReArrangeOffer(event, context):
   command = 'ReArrangeOffer'
   commandEvent(command)
   
-def GridStrategyOper():
+def TradeStatusCheck(event, context):
   command = 'TradeStatusCheck'
   commandEvent(command)
   
-def AutoFundingRate():
+def AutoFundingRate(event, context):
   command = 'AutoFundingRate'
   commandEvent(command)
   
@@ -45,5 +45,3 @@ def commandEvent(command):
       }
     }
     sqs.send_message(event)
-
-AutoFundingRate()

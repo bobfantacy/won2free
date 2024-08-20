@@ -3,6 +3,7 @@
 */.serverless
 .serverless
 */serverless.env.yml
+src/watch
 layer
 .venv
 .vscode
@@ -10,3 +11,4 @@ __pycache__
 .pytest_cache
 deploy/init.py
 test-i
+ipynb
