@@ -30,7 +30,7 @@ class Storage():
       raise Exception("Object must have __tablename__ attribute")
     return self.createTable(cls.__tablename__, cls.__pkey__, cls.__pkeytype__)
       
-  def createTable(self, table_name, pkey, pkey_type = 'N', protected=True):
+  def createTable(self, table_name, pkey, pkey_type = 'N', protected=True, isOnDemand = False):
     try:
       table = self.dynamodb.Table(table_name)
       table.load()
@@ -38,26 +38,45 @@ class Storage():
       return False
     except ClientError as e:
       if e.response['Error']['Code'] == 'ResourceNotFoundException':
-        account_table = self.dynamodb.create_table(
-            TableName=table_name,
-            KeySchema=[
-                {
-                    'AttributeName': pkey,
-                    'KeyType': 'HASH'  
-                }
-            ],
-            AttributeDefinitions=[
-                {
-                    'AttributeName': pkey,
-                    'AttributeType': pkey_type
-                }
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 5,
-                'WriteCapacityUnits': 5
-            },
-            DeletionProtectionEnabled=protected 
-        )
+        if isOnDemand:
+          account_table = self.dynamodb.create_table(
+              TableName=table_name,
+              KeySchema=[
+                  {
+                      'AttributeName': pkey,
+                      'KeyType': 'HASH'  
+                  }
+              ],
+              AttributeDefinitions=[
+                  {
+                      'AttributeName': pkey,
+                      'AttributeType': pkey_type
+                  }
+              ],
+              BillingMode='PAY_PER_REQUEST',
+              DeletionProtectionEnabled=protected 
+          )
+        else:
+          account_table = self.dynamodb.create_table(
+              TableName=table_name,
+              KeySchema=[
+                  {
+                      'AttributeName': pkey,
+                      'KeyType': 'HASH'  
+                  }
+              ],
+              AttributeDefinitions=[
+                  {
+                      'AttributeName': pkey,
+                      'AttributeType': pkey_type
+                  }
+              ],
+              ProvisionedThroughput={
+                  'ReadCapacityUnits': 1,
+                  'WriteCapacityUnits': 1
+              },
+              DeletionProtectionEnabled=protected 
+          )
         account_table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
 
         return True
