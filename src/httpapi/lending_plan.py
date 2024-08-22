@@ -54,7 +54,8 @@ def save_lending_plan(event, context):
           if globalContext.checkUserIdVsAccountId(user_id, lendingPlan.account_id):
               return create_400_response({'message': 'Not Authorized!'})
           
-          lendingPlan.id = key_generate()    
+          lendingPlan.id = key_generate()
+          lendingPlan.account_id = int(lendingPlan.account_id)
           lendingPlan.user_id = user_id
           lendingPlan.last_refresh_timestamp = timestamp
           lendingPlan.create_time = timestamp

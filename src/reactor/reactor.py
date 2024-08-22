@@ -3,7 +3,7 @@ import json
 from utils.sqs import SqsUtils
 from utils.global_context import GlobalContext
 from reactor.BotActionReArrangeOffer import BotActionReArrangeOffer
-from reactor.BotActionGridStrategyOper import BotActionGridStrategyOper
+from reactor.BotActionTradeStatusCheck import BotActionTradeStatusCheck
 from reactor.BotActionSyncTrade import BotActionSyncTrade
 from reactor.BotActionAutoFundingRate import BotActionAutoFundingRate
 from reactor.BotActionBuy import BotActionBuy
@@ -27,7 +27,7 @@ class Reactor():
     logger.info(f"Init Reactor...")
     self.botEventActions = [
        BotActionReArrangeOffer(),
-       BotActionGridStrategyOper(),
+       BotActionTradeStatusCheck(),
        BotActionSyncTrade(),
        BotActionAutoFundingRate(),
        BotActionBuy(),

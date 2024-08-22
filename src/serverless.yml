@@ -1,4 +1,4 @@
-org: won2free
+# org: won2free
 app: won2free
 service: won2free-core
 frameworkVersion: '4'
@@ -222,25 +222,25 @@ package:
     - '!package-lock.json'
     - '!requirements.txt'
     - '!serverless.env.yml'
-# resources:
-#   Resources:
-#     GatewayResponse:
-#       Type: 'AWS::ApiGateway::GatewayResponse'
-#       Properties:
-#         ResponseParameters:
-#           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-#           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
-#         ResponseType: EXPIRED_TOKEN
-#         RestApiId:
-#           Ref: 'ApiGatewayRestApi'
-#         StatusCode: '401'
-#     AuthFailureGatewayResponse:
-#       Type: 'AWS::ApiGateway::GatewayResponse'
-#       Properties:
-#         ResponseParameters:
-#           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
-#           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
-#         ResponseType: UNAUTHORIZED
-#         RestApiId:
-#           Ref: 'ApiGatewayRestApi'
-#         StatusCode: '401'
+resources:
+  Resources:
+    GatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: EXPIRED_TOKEN
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '401'
+    AuthFailureGatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: UNAUTHORIZED
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '401'

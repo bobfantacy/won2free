@@ -49,8 +49,8 @@ A base layers had been created to booster the deploy and test in the development
 ``` shell
 $ cd layers
 $ npm install 
-$ sls deploy -s prod
-Deploying "won2free-layers" to stage "prod" (ap-east-1)
+$ sls deploy
+Deploying "won2free-layers" to stage "dev" (ap-east-1)
 ✔ Service deployed to stack won2free-layers-prod (29s)
 layers:
   pythonRequirements: arn:aws:lambda:ap-east-1:xxxxxxxxxx:layer:won2free-python-requirements:1

@@ -126,12 +126,12 @@ class AbstractAction(ABC):
         order.strategy_id = strategy_id
         order.oper_count = oper_count
         self.storage.saveObject(order)
-        self.buffer_message(f"Update Order: {order.symbol}, {amount:.6f}, {price:6.0f}")
+        self.buffer_message(f"Update Order: {order.symbol}, {amount:.6f}, {price:6.3f}")
       else:
         raise Exception('Error in Update Order!')
     except Exception as e:
       logger.error(e)
-      self.buffer_message(f"Update Order Error: {order_id}, {amount:.6f}, {price:6.0f} {e}")
+      self.buffer_message(f"Update Order Error: {order_id}, {amount:.6f}, {price:6.3f} {e}")
       raise Exception(e)
     
   def flush_message(self):

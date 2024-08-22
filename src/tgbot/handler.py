@@ -86,15 +86,16 @@ def send_exchange(message):
     Exchange Action:
     /buy *
     /sell *
-    /orders *
-    /cancelOrder 
+    /orders 
+    /cancelOrder
     /updateOrder
     /createGrid
     /initGrid
-    /ResumeGrid
-    /showGrid
+    /ResumeGrid *
+    /showGrid 
     /tradeHistory
     /syncTradeHistory
+    /TradeStatusCheck *
     '''
     bot.reply_to(message, exchange_message)
     
@@ -110,7 +111,7 @@ def echo_message(message):
 #                               'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
 #                               'buy','sell','orders','cancelOrder','updateOrder','createGrid',
 #                               'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
-@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer'])
+@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck'])
 def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
     
