@@ -18,7 +18,6 @@ class BotActionReArrangeOffer(AbstractAction):
       await self.removeInactiveFundingOffer()
       lps = self.getActiveLendingPlans()
       for lp in lps:
-        await self.cancelOfferOutOfRange(lp) 
         offer_count , message = await self.distribute_funding_offers(lp)
         if(offer_count > 0):
           self.buffer_message(f"{message}\n{lp.symbol} ReArrangeFundingOffer completed!")
@@ -32,6 +31,25 @@ class BotActionReArrangeOffer(AbstractAction):
       self.storage.deleteObjectById(FundingOffer, offer_id)
     
   async def distribute_funding_offers(self, lp):
+    # Get All active offers
+    filter_lambda = lambda Attr: Attr('lp_id').eq(lp.id)
+    offers = self.storage.loadObjects(FundingOffer, filter_lambda)
+    # Cancel All out of range offers
+    delta = Decimal('0.000002')
+    outRangeIds = [int(o.id) for o in offers if o.rate*100 + delta < lp.start_rate or o.rate*100 - delta > lp.end_rate]
+    if len(outRangeIds)!=0:
+      await self.cancel_funding_offers(outRangeIds)
+      self.buffer_message(f"Canceled funding offer out of range of Plan {lp.id}!")
+    inRangeOffers = [o for o in offers if o.rate*100 + delta >= lp.start_rate and o.rate*100 - delta <= lp.end_rate]
+    
+    amount_offering = Decimal(0)
+    for o in inRangeOffers:
+      amount_offering += o.amount
+      
+    if amount_offering > lp.total_amount:
+      message = f"Plan {lp.d} offering {amount_offering} exceed total_amount {lp.total_amount}"
+      return (0, message)
+    
     min_amount = lp.min_amount
     start_rate = Decimal(lp.start_rate)
     end_rate = Decimal(lp.end_rate)
@@ -42,15 +60,16 @@ class BotActionReArrangeOffer(AbstractAction):
         
     balance_available = Decimal(await self.get_wallet_balance_available('funding', symbol[1:]))
     
-    amount_need_lend = balance_available if balance_available <= lp.total_amount else lp.total_amount
+    amount_need_lend = balance_available if balance_available <= lp.total_amount - amount_offering else lp.total_amount - amount_offering
+    
+    
     
     amount = amount_need_lend / offer_limit
-    error_range = Decimal('0.000002')
-    rate_gap = (end_rate - start_rate)/(offer_limit-1) - error_range
+    rate_gap = (end_rate - start_rate) if offer_limit == 1 else (end_rate - start_rate)/(offer_limit-1) 
     
     if amount < min_amount:
       amount = min_amount
-    rate = start_rate + error_range
+    rate = start_rate 
     offer_message = []
     total_amount = amount_need_lend
     
@@ -97,15 +116,5 @@ class BotActionReArrangeOffer(AbstractAction):
     filter_lambda = lambda Attr: Attr('status').eq('ACTIVE') & Attr('account_id').eq(self.account.id)
     lps = self.storage.loadObjects(LendingPlan, filter_lambda) 
     return lps
-  
-  async def cancelOfferOutOfRange(self, lp:LendingPlan):
-    filter_lambda = lambda Attr: Attr('lp_id').eq(lp.id)
-    offers = self.storage.loadObjects(FundingOffer, filter_lambda)
-    outRangeIds = [int(o.id) for o in offers if o.rate*100 < lp.start_rate or o.rate*100 > lp.end_rate]
-    if len(outRangeIds)!=0:
-      await self.cancel_funding_offers(outRangeIds)
-      self.buffer_message(f"Canceled funding offer out of range of Plan {lp.id}!")
-      return True
-    return False
     
     

@@ -86,65 +86,58 @@ class BotActionTradeStatusCheck(AbstractAction):
       sell_quantity = grid.order_quantity_per_trade * grid.sell_quantity_perc
       buy_quantity = grid.order_quantity_per_trade * grid.buy_quantity_perc
       
-      o2 = self.get_opposite_order(orders, executedTradeOrder)
+      o2: TradeOrder = self.get_opposite_order(orders, executedTradeOrder) # type: ignore
       
-      if(o2 is None):
-        # when the opposite order is not existed. 
-        if upper_price <= grid.upper_price_limit: # only price in the price limit
-          try:
-            await self.sell(grid.symbol, sell_quantity, upper_price, grid.id, grid.oper_count)
-          except Exception as e:
-            logger.error(f"Place Sell order error: {grid.symbol} {sell_quantity} {upper_price} {grid.id} {grid.oper_count}")
-            self.buffer_message(f"Place Sell Order fail: {e}")
-            self.buffer_message(f"Keep Buy Order and wait for next chance")
-        if lower_price >= grid.lower_price_limit: # only price in the price limit
+      buy_order = None
+      sell_order = None
+      
+      if o2 is not None and o2.amount > 0:
+        buy_order = o2
+      else:
+        sell_order = o2
+        
+      if lower_price >= grid.lower_price_limit:
+        if buy_order is None:
           try:
             await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, grid.oper_count)
           except Exception as e:
-            logger.error(f"Place Buy order error: {grid.symbol} {buy_quantity} {lower_price} {grid.id} {grid.oper_count}")
             self.buffer_message(f"Place Buy Order fail: {e}")
-            self.buffer_message(f"Keep Sell Order and wait for next chance")
-      else:
-        if o2.amount > 0: #Update Buy Order
-          if lower_price >= grid.lower_price_limit: # only price in the price limit
+        else:
+          try:
+            await self.update_order(buy_order.id, buy_quantity, lower_price, grid.id, grid.oper_count)
+          except Exception as e:
+            logger.error(f"Update order error: {buy_order.id} {buy_quantity} {lower_price} {grid.id} {grid.oper_count}")
+            self.buffer_message(f"Update Buy Order fail: {e}")
+            self.buffer_message(f"Retry to cancel and submit new order")
             try:
-              await self.update_order(int(o2.id), buy_quantity, lower_price, grid.id, grid.oper_count)
-            except Exception as e:
-              logger.error(f"Update order error: {o2.id} {buy_quantity} {lower_price} {grid.id} {grid.oper_count}")
-              self.buffer_message(f"Place Sell Order fail: {e}")
-              self.buffer_message(f"Retry to cancel and submit new order")
-              await self.cancelOrder([int(o2.id)])
+              await self.cancelOrder([int(buy_order.id)])
               await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, grid.oper_count)
-          if upper_price <= grid.upper_price_limit: # only price in the price limit
-            try:
-              await self.sell(grid.symbol, sell_quantity, upper_price, grid.id, grid.oper_count)
             except Exception as e:
-              logger.error(f"Place Sell order error: {grid.symbol} {sell_quantity} {upper_price} {grid.id} {grid.oper_count}")
-              self.buffer_message(f"Place Buy Order fail: {e}")
-              self.buffer_message(f"Keep Buy Order and wait for next chance")
-        else: #Update Sell Order
-          if upper_price <= grid.upper_price_limit: # only price in the price limit
+              self.buffer_message(f"Cancel or Submit buy Order fail: {e}")
+      if upper_price <= grid.upper_price_limit:
+        if sell_order is None:
+          try:
+            await self.sell(grid.symbol, sell_quantity, upper_price, grid.id, grid.oper_count)
+          except Exception as e:
+            self.buffer_message(f"Place Sell Order fail: {e}")
+        else:
+          try:
+            await self.update_order(int(sell_order.id), -sell_quantity, upper_price, grid.id, grid.oper_count)
+          except Exception as e:
+            logger.error(f"Update order error: {o2.id} {-sell_quantity} {upper_price} {grid.id} {grid.oper_count}")
+            self.buffer_message(f"Update Sell Order fail: {e}")
+            self.buffer_message(f"Retry to cancel and submit new order")
             try:
-              await self.update_order(int(o2.id), -sell_quantity, upper_price, grid.id, grid.oper_count)
-            except Exception as e:
-              logger.error(f"Update order error: {o2.id} {-sell_quantity} {upper_price} {grid.id} {grid.oper_count}")
-              self.buffer_message(f"Place Sell Order fail: {e}")
-              self.buffer_message(f"Retry to cancel and submit new order")
-              await self.cancelOrder([int(o2.id)])
+              await self.cancelOrder([int(sell_order.id)])
               await self.sell (grid.symbol, sell_quantity,  upper_price, grid.id, grid.oper_count)
-          if lower_price >= grid.lower_price_limit: # only price in the price limit
-            try:
-              await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, grid.oper_count)
             except Exception as e:
-              logger.error(f"Place Buy order error: {grid.symbol} {buy_quantity} {lower_price} {grid.id} {grid.oper_count}")
-              self.buffer_message(f"Place Buy Order fail: {e}")
-              self.buffer_message(f"Keep Buy Order and wait for next chance")
-
+              self.buffer_message(f"Cancel or Submit sell Order fail: {e}")
+      
       grid.oper_count = grid.oper_count + 1
       grid.status ='executing'
       self.buffer_message(f"Place New Grid Order:\n{grid.symbol} {grid.latest_base_price:5.2f} {grid.price_change_type} +{grid.every_rise_by:3.2f} -{grid.every_fall_by:3.2f} {grid.order_quantity_per_trade:.5f}")
       
       self.storage.saveObject(grid)
-      self.storage.deleteObject(executedTradeOrder)
       history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
       self.storage.saveObject(history)
+      self.storage.deleteObject(executedTradeOrder)

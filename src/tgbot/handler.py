@@ -111,7 +111,7 @@ def echo_message(message):
 #                               'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
 #                               'buy','sell','orders','cancelOrder','updateOrder','createGrid',
 #                               'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
-@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck'])
+@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck','NewLendingPlan','TestDict'])
 def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
     
@@ -125,7 +125,18 @@ def bot_action(message):
         if not account or account.user_id != message.from_user.id:
             bot.reply_to(message, f'NOT Found account name: {account_name}')
             return
+        
+        try:
+            try_json = ' '.join(args)
+            if(try_json[0:1]=='{'):
+                args_dict = json.loads(try_json)
+                args = args_dict
+        except:
+            bot.reply_to(message, f'Something wrong with the json args:\n {try_json}')
+            return
+            
         command = command[1:]
+        
         event = {
             'id': str(uuid.uuid4()),
             'body' : {

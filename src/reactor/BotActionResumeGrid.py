@@ -14,6 +14,10 @@ class BotActionResumeGrid(AbstractAction):
     command = event_body['command']
     data = event_body['data']
     
+    if type(data)==dict:
+      self.buffer_message("json args NOT supported")
+      return
+    
     if(len(data) < 1):
       self.buffer_message("Invalid command, please use: ResumeGrid <account_name> <grid_id>")
       return
@@ -35,7 +39,24 @@ class BotActionResumeGrid(AbstractAction):
     await self.resume_grid(grid)
     
   async def resume_grid(self, grid: OrderGridStrategy ):
-    if grid.price_change_type == 'difference':
+    if (grid.price_change_type == 'difference'):
+      filter_lambda = lambda Attr: Attr('strategy_id').eq(grid.id)
+      orders = self.storage.loadObjects(TradeOrder, filter_lambda)
+      if orders:
+        orderIds = [int(o.id) for o in orders]
+        executedBfxOrders = await self.get_bfx_order_history(ids = orderIds)
+        executedTradeOrders = [TradeOrder.from_bfx_order(o) for o in executedBfxOrders]
+        if executedTradeOrders:
+          executedTradeOrder = executedTradeOrders[0]
+          if executedTradeOrder.status == 'CANCELED':
+            self.storage.deleteObject(executedTradeOrder)
+          else:
+            grid.latest_base_price = executedTradeOrder.price_avg
+            history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
+            self.storage.saveObject(history)
+            self.storage.deleteObject(executedTradeOrder)
+            
+
       upper_price = grid.latest_base_price + grid.every_rise_by
       lower_price = grid.latest_base_price - grid.every_fall_by
       
@@ -60,32 +81,29 @@ class BotActionResumeGrid(AbstractAction):
         else:
           sell_order = o
       
-      
-      oper_count = grid.oper_count if buy_order is None and sell_order is None else grid.oper_count-1
-      
       if buy_order is None:
         try:
-          await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, oper_count)
+          await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, grid.oper_count)
         except Exception as e:
           self.buffer_message(f"Place Buy Order fail: {e}")
       else:
         try:
-          await self.update_order(buy_order.id, buy_quantity, lower_price, grid.id, oper_count)
+          await self.update_order(buy_order.id, buy_quantity, lower_price, grid.id, grid.oper_count)
         except Exception as e:
           self.buffer_message(f"Update Buy Order fail: {e}")
       
       if sell_order is None:
         try:
-          await self.sell(grid.symbol, sell_quantity, upper_price, grid.id, oper_count)
+          await self.sell(grid.symbol, sell_quantity, upper_price, grid.id, grid.oper_count)
         except Exception as e:
           self.buffer_message(f"Place Sell Order fail: {e}")
       else:
         try:
-          await self.update_order(int(sell_order.id), -sell_quantity, upper_price, grid.id, oper_count)
+          await self.update_order(int(sell_order.id), -sell_quantity, upper_price, grid.id, grid.oper_count)
         except Exception as e:
           self.buffer_message(f"Update Sell Order fail: {e}")
       
-      grid.oper_count = oper_count + 1
+      grid.oper_count += 1
       grid.status ='executing'
       grid.updated_at = datetime.now().isoformat()
       self.storage.saveObject(grid)

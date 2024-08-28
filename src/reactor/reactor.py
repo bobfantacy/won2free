@@ -9,6 +9,7 @@ from reactor.BotActionAutoFundingRate import BotActionAutoFundingRate
 from reactor.BotActionBuy import BotActionBuy
 from reactor.BotActionSell import BotActionSell
 from reactor.BotActionResumeGrid import BotActionResumeGrid
+from reactor.BotActionTestDict import BotActionTestDict
 
 from decimal import Decimal, getcontext, Inexact, Rounded
 context = GlobalContext()
@@ -32,7 +33,8 @@ class Reactor():
        BotActionAutoFundingRate(),
        BotActionBuy(),
        BotActionSell(),
-       BotActionResumeGrid()
+       BotActionResumeGrid(),
+       BotActionTestDict()
     ]
 
   async def processQueue(self, messages):
