@@ -31,6 +31,7 @@ class BotActionTradeStatusCheck(AbstractAction):
         if executedTradeOrder.id == order.id:
           executedTradeOrder.strategy_id = order.strategy_id
           executedTradeOrder.oper_count = order.oper_count
+          executedTradeOrder.account_id = order.account_id
           break
       await self.processOrderExecuted(orders, executedTradeOrder)
 
