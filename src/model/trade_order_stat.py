@@ -4,48 +4,93 @@ from datetime import datetime
 from decimal import Decimal
 
 class TradeOrderStat(BaseModel):
-    __tablename__ = 'trade_order'
+    __tablename__ = 'trade_order_stat'
     __pkey__ = 'id'
     __pkeytype__ = 'N'
     
-    id : int = 0 # the same as OrderGridStrategy id
-    account_id : int = 0
-    user_id : int = 0  # telegram user id
-    symbol : None
-    firstTradeTime = None
-    lastTradeTime = None
-    total_profit = 0
-    total_fee = 0
-    acumulative_amount = 0
-    acumulative_buy_amount = 0
-    acumulative_sell_amount = 0
-    max_buy_amount = 0
-    max_sell_amount = 0
-    buy_stack = []
-    sell_stack = []
-    count : int = 0
-    
     def __init__(self, *args, **kwargs):
+        self.id : int = 0
+        self.account_id : int = 0
+        self.user_id : int = 0
+        self.symbol = None
+        self.firstTradeTime = None
+        self.lastTradeTime = None
+        self.total_profit = 0
+        self.total_fee = 0
+        self.acumulative_amount = 0
+        self.acumulative_buy_amount = 0
+        self.acumulative_sell_amount = 0
+        self.max_buy_amount = 0
+        self.max_buy_cost = 0
+        self.max_sell_amount = 0
+        self.max_sell_cost = 0
+        self.buy_stack = []
+        self.sell_stack = []
+        self.count : int = 0
+        self.last_oper_count : int = -1
+        self.buy_total_cost : Decimal = Decimal(0)
+        self.buy_total_amount : Decimal = Decimal(0)
+        self.buy_total_fee : Decimal = Decimal(0)
+        self.buy_average_price : Decimal = Decimal(0)
+        self.sell_total_cost : Decimal = Decimal(0)
+        self.sell_total_amount : Decimal = Decimal(0)
+        self.sell_total_fee : Decimal = Decimal(0)
+        self.sell_average_price : Decimal = Decimal(0)
+        self.highest_price : Decimal = Decimal(0)
+        self.lowest_price : Decimal = Decimal(2**128)
+        self.seconds_in_a_year = 365 * 24 * 60 * 60
+        self.apr : Decimal = Decimal(0)
+        self.net_profit : Decimal = Decimal(0)
+        self.profit_a_year : Decimal = Decimal(0)
+        self.total_deposit : Decimal = Decimal(0)
         super().__init__(*args, **kwargs)
     
     def _buy_stack_push(self, price, amount, fee):
         self.buy_stack.append((price, amount, fee))
         self.acumulative_buy_amount += amount
+        self.max_buy_amount = max(self.max_buy_amount, self.acumulative_buy_amount)
+        self.buy_total_cost += price * amount
+        self.max_buy_cost = max(self.max_buy_cost, self.buy_total_cost)
+        self.buy_total_amount += amount
+        self.buy_total_fee += fee
+        self.buy_average_price = self.buy_total_cost / self.buy_total_amount
+        self.lowest_price = min(self.lowest_price, price)
         
         
     def _buy_stack_pop(self):
         (price, amount, fee) = self.buy_stack.pop()
         self.acumulative_buy_amount -= amount
+        self.buy_total_cost -= price * amount
+        self.buy_total_amount -= amount
+        self.buy_total_fee -= fee
+        if self.buy_total_amount > 0:
+            self.buy_average_price = self.buy_total_cost / self.buy_total_amount
+        else:
+            self.buy_average_price = Decimal(0)
+        
         return (price, amount, fee)
     
     def _sell_stack_push(self, price, amount, fee):
         self.sell_stack.append((price, amount, fee))
         self.acumulative_sell_amount += amount
+        self.max_sell_amount = max(self.max_sell_amount, self.acumulative_sell_amount)
+        self.sell_total_cost += price * amount
+        self.max_sell_cost = max(self.max_sell_cost, self.sell_total_cost)
+        self.sell_total_amount += amount
+        self.sell_total_fee += fee
+        self.sell_average_price = self.sell_total_cost / self.sell_total_amount
+        self.highest_price = max(self.highest_price, price)
 
-        
     def _sell_stack_pop(self):
         (price, amount, fee) = self.sell_stack.pop()
         self.acumulative_sell_amount -= amount
+        self.sell_total_cost -= price * amount
+        self.sell_total_amount -= amount
+        self.sell_total_fee -= fee
+        if self.sell_total_amount > 0:
+            self.sell_average_price = self.sell_total_cost / self.sell_total_amount
+        else:
+            self.sell_average_price = Decimal(0)
         return (price, amount, fee)
     
     def print(self):
@@ -54,52 +99,20 @@ class TradeOrderStat(BaseModel):
         print("Last Trade Time:", self.lastTradeTime)
         print("Total Grid Profit:", self.total_profit)
         print("Total Fees:", self.total_fee)
+        print("Net Grid Profit:", self.total_profit - self.total_fee)
         print("Acumulative Amount:", self.acumulative_amount)
         print("Acumulative Buy Amount:", self.acumulative_buy_amount)
         print("Acumulative Sell Amount:", self.acumulative_sell_amount)
         print("Max Buy Amount :", self.max_buy_amount)
         print("Max Sell Amount:", self.max_sell_amount)
+        print("Max cost:", self.max_buy_cost + self.max_sell_cost)
         print("Fee Ratio:", self.total_fee / self.total_profit if self.total_profit != 0 else 0)
-        print("buy average:", self._buy_average_price())
-        print("sell average:", self._sell_average_price())
-    def _apr(self):
-        start = datetime.fromisoformat(self.firstTradeTime)
-        end = datetime.fromisoformat(self.lastTradeTime)
-        elapsed_time = end - start
-        net_profit = self.total_profit - self.total_fee
-        seconds_in_a_year = 365 * 24 * 60 * 60
-        profit_a_year = net_profit / Decimal(str(elapsed_time.total_seconds())) * seconds_in_a_year
-        buy_price, fee  = self._buy_average_price()
-        sell_price, fee  = self._sell_average_price()
-        average_price = buy_price + sell_price
-        total_deposit = (self.max_buy_amount +  self.max_sell_amount) * average_price
-        apr = profit_a_year / total_deposit
-        print("profit_a_year:", profit_a_year)
-        print("apr:", apr)
-        
-    def _buy_average_price(self):
-        if self.buy_stack:
-            total_cost : Decimal = Decimal(0)
-            total_amount : Decimal= Decimal(0)
-            total_fee : Decimal = Decimal(0)
-            for price, amount, fee in self.buy_stack:
-                total_cost += price * amount
-                total_amount += amount
-                total_fee += fee
-            return (total_cost/total_amount, total_fee)
-        return (0,0)
-    
-    def _sell_average_price(self):
-        if self.sell_stack:
-            total_cost : Decimal = Decimal(0)
-            total_amount : Decimal= Decimal(0)
-            total_fee : Decimal = Decimal(0)
-            for price, amount, fee in self.sell_stack:
-                total_cost += price * amount
-                total_amount += amount
-                total_fee += fee
-            return (total_cost/total_amount, total_fee)        
-        return (0,0)
+        print("buy average:", self.buy_average_price)
+        print("sell average:", self.sell_average_price)
+        print("profit a year:", self.profit_a_year)
+        print("net profit:", self.net_profit)
+        print("apr:", self.apr)
+
     def processStack(self):
         # 如果卖出栈不为空，处理卖出操作
         while self.buy_stack and self.sell_stack:
@@ -128,16 +141,21 @@ class TradeOrderStat(BaseModel):
                     self._sell_stack_push(sell_price, sell_amount, sell_fee - adjusted_sell_fee)
     def stat(self, rows):
         for row in rows:
-            self.firstTradeTime = row['mts_update'] if self.firstTradeTime is None else min(self.firstTradeTime, row['mts_update'])
-            self.lastTradeTime = row['mts_update'] if self.lastTradeTime is None else max(self.lastTradeTime, row['mts_update'])
-            self.acumulative_amount += row['amount_orig']
-            self.count += 1 
-            if row['amount_orig'] > 0:
-                self._buy_stack_push(row['price_avg'], row['amount_orig'], row['fee'])
-            elif row['amount_orig'] < 0:
-                self._sell_stack_push(row['price_avg'], -row['amount_orig'], row['fee'])                
+            if row['oper_count'] > self.last_oper_count:
+                self.firstTradeTime = row['mts_update'] if self.firstTradeTime is None else min(self.firstTradeTime, row['mts_update'])
+                self.lastTradeTime = row['mts_update'] if self.lastTradeTime is None else max(self.lastTradeTime, row['mts_update'])
+                self.acumulative_amount += row['amount_orig']
+                self.count += 1 
+                if row['amount_orig'] > 0:
+                    self._buy_stack_push(row['price_avg'], row['amount_orig'], row['fee'])
+                elif row['amount_orig'] < 0:
+                    self._sell_stack_push(row['price_avg'], -row['amount_orig'], row['fee'])                
+                self.processStack()
                 
-            self.processStack()
-
-            self.max_buy_amount = max(self.max_buy_amount, self.acumulative_buy_amount)
-            self.max_sell_amount = max(self.max_sell_amount, self.acumulative_sell_amount)
+                if self.firstTradeTime != self.lastTradeTime:
+                    elapsed_time = datetime.fromisoformat(self.lastTradeTime) - datetime.fromisoformat(self.firstTradeTime)
+                    self.net_profit = self.total_profit - self.total_fee
+                    self.profit_a_year = self.net_profit / Decimal(str(elapsed_time.total_seconds())) * self.seconds_in_a_year
+                    self.total_deposit = self.max_buy_cost + self.max_sell_cost
+                    self.apr = self.profit_a_year / self.total_deposit
+                self.last_oper_count = row['oper_count']
