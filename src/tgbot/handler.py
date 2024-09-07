@@ -111,7 +111,7 @@ def echo_message(message):
 #                               'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
 #                               'buy','sell','orders','cancelOrder','updateOrder','createGrid',
 #                               'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
-@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck','NewLendingPlan','TestDict'])
+@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck','NewLendingPlan','TestDict','TradeReport'])
 def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
     

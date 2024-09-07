@@ -31,7 +31,10 @@ def TradeStatusCheck(event, context):
 def AutoFundingRate(event, context):
   command = 'AutoFundingRate'
   commandEvent(command)
-  
+
+def TradeReport(event, context):
+  command = 'TradeReport'
+  commandEvent(command)
 
 def commandEvent(command):
   accounts = storage.loadAllObjects(Account)

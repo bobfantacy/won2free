@@ -92,26 +92,25 @@ class TradeOrderStat(BaseModel):
         else:
             self.sell_average_price = Decimal(0)
         return (price, amount, fee)
-    
+    def report(self):
+        return f'''
+id : {self.id}
+Symbol: {self.symbol}
+Count: {self.count}
+First Trade Time: {self.firstTradeTime}
+Last Trade Time: {self.lastTradeTime}
+Total Grid Profit: {self.total_profit:.2f}
+Total Fees: {self.total_fee:.2f}
+Net Grid Profit: {self.net_profit:.2f}
+Acumulative Amount: {self.acumulative_amount:.4f}
+Max cost: {self.max_buy_cost + self.max_sell_cost:.2f}
+Fee Ratio: {self.total_fee / self.total_profit * 100 if self.total_profit != 0 else 0:.2f}%
+Buy average: {self.buy_average_price:.4f}
+Sell average: {self.sell_average_price:.4f}
+Profit a year: {self.profit_a_year:.2f}
+APR: {self.apr*100:.2f}%'''
     def print(self):
-        print("Count:", self.count)
-        print("First Trade Time:", self.firstTradeTime)
-        print("Last Trade Time:", self.lastTradeTime)
-        print("Total Grid Profit:", self.total_profit)
-        print("Total Fees:", self.total_fee)
-        print("Net Grid Profit:", self.total_profit - self.total_fee)
-        print("Acumulative Amount:", self.acumulative_amount)
-        print("Acumulative Buy Amount:", self.acumulative_buy_amount)
-        print("Acumulative Sell Amount:", self.acumulative_sell_amount)
-        print("Max Buy Amount :", self.max_buy_amount)
-        print("Max Sell Amount:", self.max_sell_amount)
-        print("Max cost:", self.max_buy_cost + self.max_sell_cost)
-        print("Fee Ratio:", self.total_fee / self.total_profit if self.total_profit != 0 else 0)
-        print("buy average:", self.buy_average_price)
-        print("sell average:", self.sell_average_price)
-        print("profit a year:", self.profit_a_year)
-        print("net profit:", self.net_profit)
-        print("apr:", self.apr)
+        print(self.report())
 
     def processStack(self):
         # 如果卖出栈不为空，处理卖出操作

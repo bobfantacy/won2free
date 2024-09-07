@@ -200,6 +200,10 @@ functions:
     handler: job.jobEvent.AutoFundingRate
     events:
       - schedule: ${param:schedule_daily}
+  job-TradeReport:
+    handler: job.jobEvent.TradeReport
+    events:
+      - schedule: ${param:schedule_daily}
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:

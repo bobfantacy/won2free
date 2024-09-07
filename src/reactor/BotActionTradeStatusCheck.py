@@ -4,6 +4,7 @@ from utils.global_context import *
 from model.trade_order import TradeOrder
 from model.trade_order_history import TradeOrderHistory
 from model.order_grid_strategy import OrderGridStrategy
+from model.trade_order_stat import TradeOrderStat
 from decimal import Decimal
 import time
 import logging
@@ -32,6 +33,7 @@ class BotActionTradeStatusCheck(AbstractAction):
           executedTradeOrder.strategy_id = order.strategy_id
           executedTradeOrder.oper_count = order.oper_count
           executedTradeOrder.account_id = order.account_id
+          executedTradeOrder.user_id = order.user_id
           break
       await self.processOrderExecuted(orders, executedTradeOrder)
 
@@ -48,6 +50,16 @@ class BotActionTradeStatusCheck(AbstractAction):
       if(o.strategy_id == order.strategy_id and o.id != order.id):
         return o
     return None
+  def stat(self, executedTradeOrder):
+    stat : TradeOrderStat = self.storage.loadObjectById(TradeOrderStat, executedTradeOrder.strategy_id)
+    if not stat:
+      stat = TradeOrderStat()
+      stat.id = executedTradeOrder.strategy_id
+      stat.symbol = executedTradeOrder.symbol
+      stat.account_id = executedTradeOrder.account_id
+      stat.user_id = executedTradeOrder.user_id
+    stat.stat([executedTradeOrder.to_dict()])
+    self.storage.saveObject(stat)
     
   async def processOrderExecuted(self, orders, executedTradeOrder):
     if executedTradeOrder.status == 'CANCELED':
@@ -142,3 +154,4 @@ class BotActionTradeStatusCheck(AbstractAction):
       history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
       self.storage.saveObject(history)
       self.storage.deleteObject(executedTradeOrder)
+      self.stat(executedTradeOrder)
