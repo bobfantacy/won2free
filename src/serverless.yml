@@ -48,7 +48,7 @@ provider:
             - sqs:GetQueueUrl
             - sqs:DeleteMessage
             - sqs:CreateQueue
-          Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}"
+          Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${param:QUEUE_NAME}"
 
 functions:
   get_lending_plans:
@@ -151,7 +151,7 @@ functions:
           method: post
           path: /auth/telegram
     environment:
-      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      QUEUE_NAME: ${param:QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
       JWT_SECRET: ${file(./serverless.env.yml):JWT_SECRET}
   tg_miniapp_auth:
@@ -174,7 +174,7 @@ functions:
     events:
       - http: POST /
     environment:
-      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      QUEUE_NAME: ${param:QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
       MINIAPP_URL: ${file(./serverless.env.yml):MINIAPP_URL}
 
@@ -185,7 +185,7 @@ functions:
     events:
       - http: POST /set_webhook
     environment:
-      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      QUEUE_NAME: ${param:QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
   init:
     handler: init/lambda_function.lambda_handler
@@ -212,9 +212,9 @@ functions:
       - arn:aws:lambda:${aws:region}:${aws:accountId}:layer:${file(./serverless.env.yml):LAYER_NAME}
       - arn:aws:lambda:ap-east-1:839552336658:layer:AWSSDKPandas-Python310:19
     events:
-      - sqs: arn:aws:sqs:${aws:region}:${aws:accountId}:${file(./serverless.env.yml):QUEUE_NAME}
+      - sqs: arn:aws:sqs:${aws:region}:${aws:accountId}:${param:QUEUE_NAME}
     environment:
-      QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+      QUEUE_NAME: ${param:QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
     memorySize: 256
     timeout: 30
