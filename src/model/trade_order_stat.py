@@ -110,7 +110,7 @@ Max cost: {self.max_buy_cost + self.max_sell_cost:.2f}
 Buy average price: {self.buy_average_price:.4f}
 Sell average price: {self.sell_average_price:.4f}
 Profit a year: {self.profit_a_year:.2f}
-Impermanent Loss: {self.impermanent_loss:.2f} (Base On Last Trade)
+Impermanent Loss: {self.impermanent_loss:.2f} / {abs(self.impermanent_loss)/(self.max_buy_cost + self.max_sell_cost)*100:.2f}%
 APR: {self.apr*100:.2f}%'''
     def print(self):
         print(self.report())
