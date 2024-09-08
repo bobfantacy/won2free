@@ -6,14 +6,16 @@ frameworkVersion: '4'
 stages:
   default:
     params:
-      schedule1: ${file(./serverless.env.yml):dev_schedule1}
-      schedule2: ${file(./serverless.env.yml):dev_schedule2}
-      schedule_daily: ${file(./serverless.env.yml):schedule_daily}
+      schedule1: cron(0 0 ? * * 2020)
+      schedule2: cron(0 0 ? * * 2020)
+      schedule_daily: cron(1 0 ? * * 2020)
+      QUEUE_NAME: test.fifo
   prod:
     params:
-      schedule1: ${file(./serverless.env.yml):prod_schedule1}
-      schedule2: ${file(./serverless.env.yml):prod_schedule2}
-
+      schedule1: cron(1/2 * ? * * *)
+      schedule2: cron(0/2 * ? * * *)
+      schedule_daily: cron(1 0 ? * * *)
+      QUEUE_NAME: won2free.fifo
 provider:
   name: aws
   runtime: python3.10
@@ -24,7 +26,7 @@ provider:
   logRetentionInDays: 3
   # versioning: true
   environment:
-    QUEUE_NAME: ${file(./serverless.env.yml):QUEUE_NAME}
+    QUEUE_NAME: ${param:QUEUE_NAME} 
   iam:
     role:
       statements:

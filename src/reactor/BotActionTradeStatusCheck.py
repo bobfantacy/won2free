@@ -59,6 +59,7 @@ class BotActionTradeStatusCheck(AbstractAction):
       stat.account_id = executedTradeOrder.account_id
       stat.user_id = executedTradeOrder.user_id
     stat.stat([executedTradeOrder.to_dict()])
+    self.buffer_message(f"\nNet Profit: {stat.net_profit}  APR: {stat.apr} IML: {stat.impermanent_loss}")
     self.storage.saveObject(stat)
     
   async def processOrderExecuted(self, orders, executedTradeOrder):

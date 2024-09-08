@@ -15,7 +15,7 @@ class TradeOrderStat(BaseModel):
         self.symbol = None
         self.firstTradeTime = None
         self.lastTradeTime = None
-        self.total_profit = 0
+        self.total_profit = 0  
         self.total_fee = 0
         self.acumulative_amount = 0
         self.acumulative_buy_amount = 0
@@ -28,6 +28,7 @@ class TradeOrderStat(BaseModel):
         self.sell_stack = []
         self.count : int = 0
         self.last_oper_count : int = -1
+        self.last_trade_price : Decimal = Decimal(0)
         self.buy_total_cost : Decimal = Decimal(0)
         self.buy_total_amount : Decimal = Decimal(0)
         self.buy_total_fee : Decimal = Decimal(0)
@@ -43,6 +44,7 @@ class TradeOrderStat(BaseModel):
         self.net_profit : Decimal = Decimal(0)
         self.profit_a_year : Decimal = Decimal(0)
         self.total_deposit : Decimal = Decimal(0)
+        self.impermanent_loss : Decimal = Decimal(0)
         super().__init__(*args, **kwargs)
     
     def _buy_stack_push(self, price, amount, fee):
@@ -101,13 +103,14 @@ First Trade Time: {self.firstTradeTime}
 Last Trade Time: {self.lastTradeTime}
 Total Grid Profit: {self.total_profit:.2f}
 Total Fees: {self.total_fee:.2f}
+Fee Ratio: {self.total_fee / self.total_profit * 100 if self.total_profit != 0 else 0:.2f}%
 Net Grid Profit: {self.net_profit:.2f}
 Acumulative Amount: {self.acumulative_amount:.4f}
 Max cost: {self.max_buy_cost + self.max_sell_cost:.2f}
-Fee Ratio: {self.total_fee / self.total_profit * 100 if self.total_profit != 0 else 0:.2f}%
-Buy average: {self.buy_average_price:.4f}
-Sell average: {self.sell_average_price:.4f}
+Buy average price: {self.buy_average_price:.4f}
+Sell average price: {self.sell_average_price:.4f}
 Profit a year: {self.profit_a_year:.2f}
+Impermanent Loss: {self.impermanent_loss:.2f} (Base On Last Trade)
 APR: {self.apr*100:.2f}%'''
     def print(self):
         print(self.report())
@@ -150,7 +153,13 @@ APR: {self.apr*100:.2f}%'''
                 elif row['amount_orig'] < 0:
                     self._sell_stack_push(row['price_avg'], -row['amount_orig'], row['fee'])                
                 self.processStack()
-                
+                self.last_trade_price = row['price_avg']
+                cur_value = self.acumulative_amount * self.last_trade_price
+                if self.acumulative_amount>0:
+                    self.impermanent_loss = cur_value - (self.buy_total_cost + self.buy_total_fee)
+                else: 
+                    self.impermanent_loss = (self.sell_total_cost - self.sell_total_fee) + cur_value 
+                    
                 if self.firstTradeTime != self.lastTradeTime:
                     elapsed_time = datetime.fromisoformat(self.lastTradeTime) - datetime.fromisoformat(self.firstTradeTime)
                     self.net_profit = self.total_profit - self.total_fee
