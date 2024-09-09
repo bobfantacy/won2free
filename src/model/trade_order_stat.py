@@ -29,14 +29,14 @@ class TradeOrderStat(BaseModel):
         self.count : int = 0
         self.last_oper_count : int = -1
         self.last_trade_price : Decimal = Decimal(0)
-        self.buy_total_cost : Decimal = Decimal(0)
-        self.buy_total_amount : Decimal = Decimal(0)
-        self.buy_total_fee : Decimal = Decimal(0)
-        self.buy_average_price : Decimal = Decimal(0)
-        self.sell_total_cost : Decimal = Decimal(0)
-        self.sell_total_amount : Decimal = Decimal(0)
-        self.sell_total_fee : Decimal = Decimal(0)
-        self.sell_average_price : Decimal = Decimal(0)
+        self.buy_total_cost : Decimal = Decimal(0)     # w/o profit
+        self.buy_total_amount : Decimal = Decimal(0)   # w/o profit
+        self.buy_total_fee : Decimal = Decimal(0)      # w/o profit
+        self.buy_average_price : Decimal = Decimal(0)  # w/o profit
+        self.sell_total_cost : Decimal = Decimal(0)    # w/o profit
+        self.sell_total_amount : Decimal = Decimal(0)  # w/o profit
+        self.sell_total_fee : Decimal = Decimal(0)     # w/o profit
+        self.sell_average_price : Decimal = Decimal(0) # w/o profit
         self.highest_price : Decimal = Decimal(0)
         self.lowest_price : Decimal = Decimal(2**128)
         self.seconds_in_a_year = 365 * 24 * 60 * 60
@@ -44,7 +44,7 @@ class TradeOrderStat(BaseModel):
         self.net_profit : Decimal = Decimal(0)
         self.profit_a_year : Decimal = Decimal(0)
         self.total_deposit : Decimal = Decimal(0)
-        self.impermanent_loss : Decimal = Decimal(0)
+        self.impermanent_loss : Decimal = Decimal(0)   # w/o profit
         super().__init__(*args, **kwargs)
     
     def _buy_stack_push(self, price, amount, fee):
@@ -101,17 +101,16 @@ Symbol: {self.symbol}
 Count: {self.count}
 First Trade Time: {self.firstTradeTime}
 Last Trade Time: {self.lastTradeTime}
+Acumulative Amount: {self.acumulative_amount:.4f}
+Average Price: {self.buy_average_price if self.acumulative_amount > 0 else self.sell_average_price:.4f}
+Total Deposit: {self.total_deposit:.2f}
 Total Grid Profit: {self.total_profit:.2f}
 Total Fees: {self.total_fee:.2f}
 Fee Ratio: {self.total_fee / self.total_profit * 100 if self.total_profit != 0 else 0:.2f}%
-Net Grid Profit: {self.net_profit:.2f}
-Acumulative Amount: {self.acumulative_amount:.4f}
-Max cost: {self.max_buy_cost + self.max_sell_cost:.2f}
-Buy average price: {self.buy_average_price:.4f}
-Sell average price: {self.sell_average_price:.4f}
-Profit a year: {self.profit_a_year:.2f}
-Impermanent Loss: {self.impermanent_loss:.2f} / {abs(self.impermanent_loss)/(self.max_buy_cost + self.max_sell_cost)*100:.2f}%
-APR: {self.apr*100:.2f}%'''
+Impermanent Loss: {self.impermanent_loss:.2f} / {abs(self.impermanent_loss)/self.total_deposit*100:.2f}%
+Net Grid Profit: {self.net_profit:.2f} / {self.apr*100:.2f}%
+Grid Profit a year(estimated): {self.profit_a_year:.2f}
+Net Profit: {self.net_profit + self.impermanent_loss:.2f} / {(self.net_profit + self.impermanent_loss)/self.total_deposit*100:.2f}%'''
     def print(self):
         print(self.report())
 

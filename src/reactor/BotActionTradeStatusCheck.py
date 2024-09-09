@@ -59,7 +59,7 @@ class BotActionTradeStatusCheck(AbstractAction):
       stat.account_id = executedTradeOrder.account_id
       stat.user_id = executedTradeOrder.user_id
     stat.stat([executedTradeOrder.to_dict()])
-    self.buffer_message(f"\nNet Profit: {stat.net_profit}  APR: {stat.apr} IML: {stat.impermanent_loss}")
+    self.buffer_message(f"Net Grid Profit: {stat.net_profit:.2f} / {stat.apr*100:.2f}% Impermanent Loss: {stat.impermanent_loss:.2f} Net Profit: {stat.net_profit + stat.impermanent_loss:.2f} / {(stat.net_profit + stat.impermanent_loss)/stat.total_deposit*100:.2f}% ")
     self.storage.saveObject(stat)
     
   async def processOrderExecuted(self, orders, executedTradeOrder):
@@ -128,6 +128,9 @@ class BotActionTradeStatusCheck(AbstractAction):
               await self.buy (grid.symbol, buy_quantity,  lower_price, grid.id, grid.oper_count)
             except Exception as e:
               self.buffer_message(f"Cancel or Submit buy Order fail: {e}")
+      else:
+        self.buffer_message(f"lower price limit reached: {lower_price}/{grid.lower_price_limit}")
+        
       if upper_price <= grid.upper_price_limit:
         if sell_order is None:
           try:
@@ -146,10 +149,12 @@ class BotActionTradeStatusCheck(AbstractAction):
               await self.sell (grid.symbol, sell_quantity,  upper_price, grid.id, grid.oper_count)
             except Exception as e:
               self.buffer_message(f"Cancel or Submit sell Order fail: {e}")
+      else:
+        self.buffer_message(f"upper price limit reached: {upper_price}/{grid.upper_price_limit}")
       
       grid.oper_count = grid.oper_count + 1
       grid.status ='executing'
-      self.buffer_message(f"Place New Grid Order:\n{grid.symbol} {grid.latest_base_price:5.2f} {grid.price_change_type} +{grid.every_rise_by:3.2f} -{grid.every_fall_by:3.2f} {grid.order_quantity_per_trade:.5f}")
+      self.buffer_message(f"Place New Grid Order:\n{grid.symbol} {grid.latest_base_price:5.4f} {grid.price_change_type} +{grid.every_rise_by:3.4f} -{grid.every_fall_by:3.4f} {grid.order_quantity_per_trade:.5f}")
       
       self.storage.saveObject(grid)
       history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
