@@ -3,7 +3,7 @@ from bfxapi.models.order import OrderType
 from model.lending_plan import LendingPlan
 from model.funding_offer import FundingOffer
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import logging
 import math
 
@@ -51,9 +51,9 @@ class BotActionReArrangeOffer(AbstractAction):
       return (0, message)
     
     min_amount = lp.min_amount
-    start_rate = Decimal(lp.start_rate)
-    end_rate = Decimal(lp.end_rate)
-
+    start_rate = lp.start_rate
+    end_rate = lp.end_rate
+    
     period = lp.period
     offer_limit = lp.offer_limit
     symbol = lp.symbol
@@ -62,22 +62,20 @@ class BotActionReArrangeOffer(AbstractAction):
     
     amount_need_lend = balance_available if balance_available <= lp.total_amount - amount_offering else lp.total_amount - amount_offering
     
-    
-    
     amount = amount_need_lend / offer_limit
-    rate_gap = (end_rate - start_rate) if offer_limit == 1 else (end_rate - start_rate)/(offer_limit-1) 
+    rate_gap = (lp.end_rate - lp.start_rate) if offer_limit == 1 else (lp.end_rate - lp.start_rate)/(offer_limit-1) 
     
     if amount < min_amount:
       amount = min_amount
-    rate = start_rate 
+    rate = lp.start_rate
     offer_message = []
     total_amount = amount_need_lend
     
-    message = f"Distributing funding offers from {start_rate:.4f} to {end_rate:.4f} with rate gap of {rate_gap:.4f}\n"
+    message = f"Distributing funding offers from {lp.start_rate:.4f} to {lp.end_rate:.4f} with rate gap of {rate_gap:.4f}\n"
     while amount_need_lend >=min_amount:
       if(amount_need_lend < amount + min_amount):
         amount = amount_need_lend
-        
+      rate = rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
       response = await self.bfx.rest.submit_funding_offer(symbol, amount, rate/100, int(period))
       self.saveFundingOffer(response, lp.id)
       

@@ -109,7 +109,9 @@ class Storage():
         for item in value:
           batch.put_item(Item=item)
     else:
+      
       table.put_item(Item=value)
+
       
   def saveObjects(self, objs):
     if self._is_array(objs) and len(objs) > 0:
@@ -175,6 +177,31 @@ class Storage():
     for item in  response.get('Items', []):
       result.append(cls.from_dict(item))
     return result
+
+  def add_attribute(self, table_name, key, new_attribute, new_value):
+    table = self.dynamodb.Table(table_name)
+    table.update_item(
+        Key=key,
+        UpdateExpression=f'SET {new_attribute} = :val',
+        ExpressionAttributeValues={
+            ':val': new_value
+        }
+    )
+    print(f"Attribute '{new_attribute}' added to item with key {key} in table '{table_name}'.")
+  
+  def updateModel(self, obj):
+    if not hasattr(obj, "__tablename__"):
+      raise Exception("Object must have __tablename__ attribute")
+
+    changes = obj.modelVersionChange()
+    if changes:
+      table_name = obj.__tablename__
+      key = {obj.__pkey__: getattr(obj, obj.__pkey__)}
+      for oper, attr, val in changes:
+        if(oper=="add"):
+          self.add_attribute(table_name, key, attr, val)
+      obj.version = obj.version+1
+      self.saveObject(obj)
   
   def loadAllItems(self, table_name):
     table = self.dynamodb.Table(table_name)

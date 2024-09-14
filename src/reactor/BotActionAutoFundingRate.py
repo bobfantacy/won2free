@@ -4,7 +4,7 @@ from model.lending_plan import LendingPlan
 import math
 import pandas as pd
 import time
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP, getcontext, Inexact, Rounded
 
 class BotActionAutoFundingRate(AbstractAction):
   
@@ -26,11 +26,18 @@ class BotActionAutoFundingRate(AbstractAction):
     df = pd.DataFrame(candles[:-1], columns=['mts', 'open', 'close','high','low','volume'])
 
     high_mean = df['high'].mean()
+
+    start_rate = Decimal(str(high_mean * 100 * float(lp.low_rate)))
+    end_rate = Decimal(str(high_mean * 100 * float(lp.high_rate)))
     
-    start_rate = high_mean * 100 * float(lp.low_rate)
-    end_rate = high_mean * 100 * float(lp.high_rate)
-    lp.start_rate = Decimal(str(start_rate))
-    lp.end_rate = Decimal(str(end_rate))
+    start_rate = lp.rate_limit_low  if lp.rate_limit_enabled and lp.rate_limit_low  >= start_rate else start_rate
+    end_rate   = lp.rate_limit_high if lp.rate_limit_enabled and lp.rate_limit_high <= end_rate   else end_rate
+    end_rate   = start_rate if start_rate >= end_rate else end_rate
+    
+    # lp.start_rate = Decimal(str(start_rate))
+    # lp.end_rate   = Decimal(str(end_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    lp.start_rate = start_rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    lp.end_rate   = end_rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
     lp.rate_gap = Decimal('0')
     self.storage.saveObject(lp)
     self.buffer_message(f"  id: {lp.id}, {lp.symbol} P: {lp.period} SR: {lp.start_rate:.5f}, ER: {lp.end_rate:.5f}, RG: {lp.rate_gap:.5f} by {lp.days} days")

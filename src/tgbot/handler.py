@@ -41,9 +41,8 @@ def send_welcome(message):
         try:
             keyboard = InlineKeyboardMarkup()
             web_app_info = WebAppInfo(url=MINIAPP_URL)
-            keyboard.add(InlineKeyboardButton("Open web App", web_app=web_app_info))
-            keyboard.add(InlineKeyboardButton("Open Url", url=MINIAPP_URL))
-            bot.send_message(chat_id, 'Welcome to my Mini App!', reply_markup=keyboard)
+            keyboard.add(InlineKeyboardButton("Fun my Fund!", web_app=web_app_info))
+            bot.send_message(chat_id, 'Welcome to Won2Free!\n A free, simple, easy bot for Bitfinex!', reply_markup=keyboard)
         except Exception as error:
             print('Error sending message:', error)
     else:
@@ -73,7 +72,7 @@ def send_fund(message):
     /funding_loan
     /earning
     /candle
-    /ReArrangeFundingOffer
+    /ReArrangeOffer
     /AutoFundingRate
     /FundingSummary
     /syncFunding

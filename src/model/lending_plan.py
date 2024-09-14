@@ -7,27 +7,40 @@ class LendingPlan(BaseModel):
     __pkey__ = 'id'
     __pkeytype__ = 'N'
 
-    id = None
-    account_id : int = 0
-    user_id : int = 0  # telegram user id
-    symbol = None
-    start_rate = None
-    end_rate : Decimal = Decimal(0)
-    rate_gap : Decimal = Decimal(0)
-    offer_limit : Decimal = Decimal(0)
-    total_amount : Decimal = Decimal(0)
-    priority = None
-    period = None
-    min_amount : Decimal = Decimal(0)
-    refresh_period : Decimal = Decimal(0)
-    status = None
-    last_refresh_timestamp = None
-    auto_update = None
-    days = None
-    low_rate : Decimal = Decimal(0)
-    high_rate : Decimal = Decimal(0)
-    create_time = None
-    update_time = None
-
     def __init__(self, *args, **kwargs):
+        self.version = 1
+        self.id = None
+        self.account_id : int = 0
+        self.user_id : int = 0  # telegram user id
+        self.symbol = None
+        self.start_rate : Decimal = Decimal(0)
+        self.end_rate : Decimal = Decimal(0)
+        self.rate_gap : Decimal = Decimal(0)
+        self.rate_limit_low : Decimal = Decimal('0.027')
+        self.rate_limit_high : Decimal = Decimal('0.07')
+        self.rate_limit_enabled: bool = True
+        self.offer_limit : Decimal = Decimal(0)
+        self.total_amount : Decimal = Decimal(0)
+        self.priority = None
+        self.period = None
+        self.min_amount : Decimal = Decimal(0)
+        self.refresh_period : Decimal = Decimal(0)
+        self.status = None
+        self.last_refresh_timestamp = None
+        self.auto_update = None
+        self.days = None
+        self.low_rate : Decimal = Decimal(0)
+        self.high_rate : Decimal = Decimal(0)
+        self.create_time = None
+        self.update_time = None
         super().__init__(*args, **kwargs)
+
+    def modelVersionChange(self):
+        attrs = []
+        fromVersion = self.version
+        if fromVersion == 0:
+            attrs.append(('add', 'rate_limit_low',  Decimal('0.027')))
+            attrs.append(('add', 'rate_limit_high', Decimal('0.07')))
+            attrs.append(('add', 'rate_limit_enabled', True))
+            attrs.append(('add', 'version', 0))
+        return attrs
