@@ -3,7 +3,7 @@ from bfxapi.models.order import OrderType
 from model.lending_plan import LendingPlan
 from model.funding_offer import FundingOffer
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_FLOOR
 import logging
 import math
 
@@ -51,8 +51,6 @@ class BotActionReArrangeOffer(AbstractAction):
       return (0, message)
     
     min_amount = lp.min_amount
-    start_rate = lp.start_rate
-    end_rate = lp.end_rate
     
     period = lp.period
     offer_limit = lp.offer_limit
@@ -61,21 +59,24 @@ class BotActionReArrangeOffer(AbstractAction):
     balance_available = Decimal(await self.get_wallet_balance_available('funding', symbol[1:]))
     
     amount_need_lend = balance_available if balance_available <= lp.total_amount - amount_offering else lp.total_amount - amount_offering
+    amount_need_lend = amount_need_lend.quantize(Decimal('0.00001'), rounding=ROUND_FLOOR)
     
     amount = amount_need_lend / offer_limit
     rate_gap = (lp.end_rate - lp.start_rate) if offer_limit == 1 else (lp.end_rate - lp.start_rate)/(offer_limit-1) 
+    rate_gap = rate_gap.quantize(Decimal('0.0001'), rounding=ROUND_FLOOR)
     
     if amount < min_amount:
       amount = min_amount
     rate = lp.start_rate
     offer_message = []
-    total_amount = amount_need_lend
+    
+    total_amount = amount_need_lend.quantize(Decimal('0.00001'), rounding=ROUND_FLOOR)
+    amount = amount.quantize(Decimal('0.00001'), rounding=ROUND_FLOOR)
     
     message = f"Distributing funding offers from {lp.start_rate:.4f} to {lp.end_rate:.4f} with rate gap of {rate_gap:.4f}\n"
     while amount_need_lend >=min_amount:
       if(amount_need_lend < amount + min_amount):
-        amount = amount_need_lend
-      rate = rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        amount = amount_need_lend.quantize(Decimal('0.00001'), rounding=ROUND_FLOOR)
       response = await self.bfx.rest.submit_funding_offer(symbol, amount, rate/100, int(period))
       self.saveFundingOffer(response, lp.id)
       
