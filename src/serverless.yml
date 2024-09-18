@@ -8,13 +8,15 @@ stages:
     params:
       schedule1: cron(0 0 ? * * 2020)
       schedule2: cron(0 0 ? * * 2020)
-      schedule_daily: cron(1 0 ? * * 2020)
+      schedule_daily801: cron(1 0 ? * * 2020)
+      schedule_daily931: cron(31 1 ? * * 2020)
       QUEUE_NAME: test.fifo
   prod:
     params:
       schedule1: cron(1/2 * ? * * *)
       schedule2: cron(0/2 * ? * * *)
-      schedule_daily: cron(1 0 ? * * *)
+      schedule_daily801: cron(1 0 ? * * *)
+      schedule_daily931: cron(31 1 ? * * *)
       QUEUE_NAME: won2free.fifo
 provider:
   name: aws
@@ -198,14 +200,19 @@ functions:
     handler: job.jobEvent.ReArrangeOffer
     events:
       - schedule: ${param:schedule1}
+      # - schedule: cron(0 0 ? * * 2020)
   job-AutoFundingRate:
     handler: job.jobEvent.AutoFundingRate
     events:
-      - schedule: ${param:schedule_daily}
+      - schedule: ${param:schedule_daily801}
   job-TradeReport:
     handler: job.jobEvent.TradeReport
     events:
-      - schedule: ${param:schedule_daily}
+      - schedule: ${param:schedule_daily801}
+  job-FundingSummary:
+    handler: job.jobEvent.TradeReport
+    events:
+      - schedule: ${param:schedule_daily931}
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:

@@ -64,14 +64,6 @@ def send_command_help(message):
 def send_fund(message):
     fund_message = '''
     Funding Action:
-    /config
-    /lending_plan
-    /funding_offer
-    /funding_history
-    /funding_credit
-    /funding_loan
-    /earning
-    /candle
     /ReArrangeOffer
     /AutoFundingRate
     /FundingSummary
@@ -85,15 +77,7 @@ def send_exchange(message):
     Exchange Action:
     /buy *
     /sell *
-    /orders 
-    /cancelOrder
-    /updateOrder
-    /createGrid
-    /initGrid
     /ResumeGrid *
-    /showGrid 
-    /tradeHistory
-    /syncTradeHistory
     /TradeStatusCheck *
     '''
     bot.reply_to(message, exchange_message)
@@ -102,15 +86,16 @@ def send_exchange(message):
 def echo_message(message):
     bot.reply_to(message, f"thread_id: {message.message_thread_id} chat_id: {message.chat.id} text: {message.text} user_id: {message.from_user.id}")
     
-# @bot.message_handler(commands=[
-#                               'balance',
-#                               'lending_plan',
-#                               'on',
-#                               'funding_offer','funding_history','funding_credit','funding_loan',
-#                               'earning','candle','ReArrangeFundingOffer','AutoFundingRate','FundingSummary',
-#                               'buy','sell','orders','cancelOrder','updateOrder','createGrid',
-#                               'initGrid','ResumeGrid','showGrid','tradeHistory','syncTradeHistory','syncFunding'])
-@bot.message_handler(commands=['buy','sell', 'ResumeGrid','AutoFundingRate','ReArrangeOffer','TradeStatusCheck','NewLendingPlan','TestDict','TradeReport'])
+@bot.message_handler(commands=['buy',
+                               'sell', 
+                               'ResumeGrid',
+                               'AutoFundingRate',
+                               'ReArrangeOffer',
+                               'TradeStatusCheck',
+                               'NewLendingPlan',
+                               'TestDict',
+                               'TradeReport',
+                               'FundingSummary'])
 def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
     

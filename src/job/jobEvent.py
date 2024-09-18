@@ -36,6 +36,10 @@ def TradeReport(event, context):
   command = 'TradeReport'
   commandEvent(command)
 
+def FundingSummary(event, context):
+  command = 'FundingSummary'
+  commandEvent(command)
+
 def commandEvent(command):
   accounts = storage.loadAllObjects(Account)
   for account in accounts:

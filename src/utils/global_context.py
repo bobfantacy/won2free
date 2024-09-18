@@ -10,11 +10,6 @@ from utils.storage import Storage
 from utils.telebot import TelebotUtils
 from decimal import Decimal, getcontext, Inexact, Rounded
 
-context = getcontext()
-context.prec = 28
-context.traps[Inexact] = False  # Don't catch Inexact 
-context.traps[Rounded] = False  # Don't catch Rounded
-
 class GlobalContext:
   '''
     Global Context object, holding all the object during the runtime
