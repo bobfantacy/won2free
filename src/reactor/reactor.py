@@ -75,5 +75,6 @@ class Reactor():
           message.delete()
         except Exception as e:
           logger.error(e)
-      messages = sqs.receive_messages(10)
+      # messages = sqs.receive_messages(10)
+      messages = []
     logger.info("finish")

@@ -6,16 +6,16 @@ frameworkVersion: '4'
 stages:
   default:
     params:
-      schedule1: cron(0 0 ? * * 2020)
-      schedule2: cron(0 0 ? * * 2020)
+      schedule_2min: cron(0 0 ? * * 2020)
+      schedule_10min: cron(0 0 ? * * 2020)
       schedule_daily801: cron(1 0 ? * * 2020)
       schedule_daily931: cron(31 1 ? * * 2020)
       schedule_hourly:   cron(1 * ? * * 2020)
       QUEUE_NAME: test.fifo
   prod:
     params:
-      schedule1: cron(1/2 * ? * * *)
-      schedule2: cron(0/2 * ? * * *)
+      schedule_2min: cron(1/2 * ? * * *)
+      schedule_10min: cron(0/10 * ? * * *)
       schedule_daily801: cron(1 0 ? * * *)
       schedule_daily931: cron(31 1 ? * * *)
       schedule_hourly:   cron(1 * ? * * *)
@@ -197,11 +197,11 @@ functions:
   job-TradeStatusCheck:
     handler: job.jobEvent.TradeStatusCheck
     events:
-      - schedule: ${param:schedule1}
+      - schedule: ${param:schedule_2min}
   job-ReArrangeOffer:
     handler: job.jobEvent.ReArrangeOffer
     events:
-      - schedule: ${param:schedule1}
+      - schedule: ${param:schedule_10min}
       # - schedule: cron(0 0 ? * * 2020)
   job-AutoFundingRate:
     handler: job.jobEvent.AutoFundingRate
