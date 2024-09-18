@@ -40,6 +40,10 @@ def FundingSummary(event, context):
   command = 'FundingSummary'
   commandEvent(command)
 
+def FundingNotification(event, context):
+  command = 'FundingNotification'
+  commandEvent(command)
+  
 def commandEvent(command):
   accounts = storage.loadAllObjects(Account)
   for account in accounts:

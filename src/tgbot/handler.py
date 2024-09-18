@@ -67,6 +67,7 @@ def send_fund(message):
     /ReArrangeOffer
     /AutoFundingRate
     /FundingSummary
+    /FundingNotification
     /syncFunding
     '''
     bot.reply_to(message, fund_message)
@@ -95,7 +96,8 @@ def echo_message(message):
                                'NewLendingPlan',
                                'TestDict',
                                'TradeReport',
-                               'FundingSummary'])
+                               'FundingSummary',
+                               'FundingNotification'])
 def bot_action(message):
     logger.info(f"Received a message from telegram: {message.text}")
     

@@ -10,6 +10,7 @@ stages:
       schedule2: cron(0 0 ? * * 2020)
       schedule_daily801: cron(1 0 ? * * 2020)
       schedule_daily931: cron(31 1 ? * * 2020)
+      schedule_hourly:   cron(1 * ? * * 2020)
       QUEUE_NAME: test.fifo
   prod:
     params:
@@ -17,6 +18,7 @@ stages:
       schedule2: cron(0/2 * ? * * *)
       schedule_daily801: cron(1 0 ? * * *)
       schedule_daily931: cron(31 1 ? * * *)
+      schedule_hourly:   cron(1 * ? * * *)
       QUEUE_NAME: won2free.fifo
 provider:
   name: aws
@@ -210,9 +212,13 @@ functions:
     events:
       - schedule: ${param:schedule_daily801}
   job-FundingSummary:
-    handler: job.jobEvent.TradeReport
+    handler: job.jobEvent.FundingSummary
     events:
       - schedule: ${param:schedule_daily931}
+  job-FundingNotification:
+    handler: job.jobEvent.FundingNotification
+    events:
+      - schedule: ${param:schedule_hourly}
   reactor:
     handler: reactor/lambda_function.lambda_handler
     layers:
