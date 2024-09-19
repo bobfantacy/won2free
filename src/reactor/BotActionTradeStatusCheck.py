@@ -93,9 +93,19 @@ class BotActionTradeStatusCheck(AbstractAction):
       lower_price = grid.latest_base_price - grid.every_fall_by
       
       if(upper_price > grid.upper_price_limit or lower_price < grid.lower_price_limit):
-        # if(grid.stop_on_failure):
-        #   grid.status = 'stop'
         self.buffer_message(f"Price limit reached, upper: {upper_price} lower: {lower_price}")
+        if(grid.stop_on_failure):
+          grid.status = 'stop'
+          grid.oper_count = grid.oper_count + 1
+          o2: TradeOrder = self.get_opposite_order(orders, executedTradeOrder) # type: ignore
+          await self.cancelOrder([int(o2.id)])
+          self.storage.saveObject(grid)
+          history = TradeOrderHistory.from_TradeOrder(executedTradeOrder)
+          self.storage.saveObject(history)
+          self.storage.deleteObject(executedTradeOrder)
+          self.stat(executedTradeOrder)
+          self.buffer_message(f"Grid Strategy {executedTradeOrder.strategy_id} STOP!")
+          return
     
       sell_quantity = grid.order_quantity_per_trade * grid.sell_quantity_perc
       buy_quantity = grid.order_quantity_per_trade * grid.buy_quantity_perc
