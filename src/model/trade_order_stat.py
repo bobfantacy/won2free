@@ -158,11 +158,16 @@ Net Profit: {self.net_profit + self.impermanent_loss:.2f} / {(self.net_profit + 
                     self.impermanent_loss = cur_value - (self.buy_total_cost + self.buy_total_fee)
                 else: 
                     self.impermanent_loss = (self.sell_total_cost - self.sell_total_fee) + cur_value 
-                    
+                
                 if self.firstTradeTime != self.lastTradeTime:
                     elapsed_time = datetime.fromisoformat(self.lastTradeTime) - datetime.fromisoformat(self.firstTradeTime)
                     self.net_profit = self.total_profit - self.total_fee
                     self.profit_a_year = self.net_profit / Decimal(str(elapsed_time.total_seconds())) * self.seconds_in_a_year
-                    self.total_deposit = self.max_buy_cost + self.max_sell_cost
                     self.apr = self.profit_a_year / self.total_deposit
+                else:
+                    self.net_profit = Decimal('0')
+                    self.profit_a_year = Decimal('0')
+                    self.apr = Decimal('0')
+                    
+                self.total_deposit = self.max_buy_cost + self.max_sell_cost
                 self.last_oper_count = row['oper_count']
