@@ -68,7 +68,6 @@ def send_fund(message):
     /AutoFundingRate
     /FundingSummary
     /FundingNotification
-    /syncFunding
     '''
     bot.reply_to(message, fund_message)
     
@@ -80,6 +79,7 @@ def send_exchange(message):
     /sell *
     /ResumeGrid *
     /TradeStatusCheck *
+    /TradeReport *
     '''
     bot.reply_to(message, exchange_message)
     
