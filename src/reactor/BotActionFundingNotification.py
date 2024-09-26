@@ -5,6 +5,7 @@ from utils.global_context import *
 from datetime import datetime, timedelta
 import math
 import time
+import re
 
 class BotActionFundingNotification(AbstractAction):
   
@@ -14,8 +15,13 @@ class BotActionFundingNotification(AbstractAction):
   async def _execute(self, context):
     for currency in ['fUSD', 'fUST']:
       await self._notify_executed_offers(currency)
-        
-  async def _notify_executed_offers(self, symbol: str = 'fUSD', minutes = 61):
+      
+  def extract_percentage(self, text):
+        match = re.search(r'(\d+\.\d+)%', text)
+        if match:
+            return float(match.group(1))
+        return 0
+  async def _notify_executed_offers(self, symbol: str = 'fUSD', minutes = 180):
     now = datetime.now()
     start_time = now - timedelta(minutes=minutes)
     end_time = now
@@ -25,4 +31,5 @@ class BotActionFundingNotification(AbstractAction):
     offers = await self.bfx.rest.get_funding_offer_history(symbol=symbol, start=start, end=end, limit=500)
     for o in offers:
       if 'EXECUTED' in o.status:
-        self.buffer_message(f"{o.id} {o.symbol} {o.status} {o.rate*100*365:.4f}% {o.period} {datetime.fromtimestamp(o.mts_updated/1000)}")
+        actual_rate = self.extract_percentage(o.status)
+        self.buffer_message(f"{o.id} {o.symbol} {o.status} {actual_rate*365:.4f}% {o.period} {datetime.fromtimestamp(o.mts_updated/1000)}")
