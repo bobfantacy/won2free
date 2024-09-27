@@ -21,7 +21,7 @@ class BotActionFundingNotification(AbstractAction):
         if match:
             return float(match.group(1))
         return 0
-  async def _notify_executed_offers(self, symbol: str = 'fUSD', minutes = 180):
+  async def _notify_executed_offers(self, symbol: str = 'fUSD', minutes = 61):
     now = datetime.now()
     start_time = now - timedelta(minutes=minutes)
     end_time = now

@@ -15,6 +15,7 @@ class Account(BaseModel):
     affiliate_code = None
     create_time = None
     update_time = None
+    funding_back_exchange = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

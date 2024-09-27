@@ -1,5 +1,5 @@
 from reactor.AbstractAction import AbstractAction
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils.global_context import *
 from model.trade_order import TradeOrder
 from model.trade_order_history import TradeOrderHistory
@@ -36,7 +36,26 @@ class BotActionTradeStatusCheck(AbstractAction):
           executedTradeOrder.user_id = order.user_id
           break
       await self.processOrderExecuted(orders, executedTradeOrder)
-
+    if self.account.funding_back_exchange:
+      await self.makeShortPeriodFunding()
+  async def makeShortPeriodFunding(self):
+    wallet_balances = await self.bfx.rest.get_wallets()
+    funding_wallet_balance = next((w for w in wallet_balances if w.type == 'funding'), None)
+    funding_balance_available = funding_wallet_balance.balance_available
+    symbol = 'fUSD'
+    if funding_balance_available > 150:
+      now = datetime.now()
+      start_time = now - timedelta(hours=1)
+      start_timestamp = int(start_time.timestamp())*1000
+      end_timestamp = int(now.timestamp())*1000
+      funding_history = await self.bfx.rest.get_funding_offer_history(symbol=symbol, start=start_timestamp, end=end_timestamp)
+      if not funding_history:
+        books = await self.bfx.rest.get_public_books(symbol, precision="P0", length=100)
+        highest_rate = 0
+        for b in books:
+            if b[1] == 2 and b[3] <0 and b[0]>highest_rate:
+                highest_rate = b[0]
+        await self.bfx.rest.submit_funding_offer(symbol, 150, highest_rate, 2)
   def get_active_grid_stragegy(self, strategy_id):
     filter_lambda = lambda Attr: Attr('id').eq(strategy_id)
     items = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
