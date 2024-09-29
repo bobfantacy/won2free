@@ -8,7 +8,8 @@ class BotActionSell(AbstractAction):
                        'SOLUSD',
                        'SOLUST',
                        "EOSUSD",
-                       "EOSUST"]
+                       "EOSUST",
+                       'USTUSD']
   def __init__(self):
     super().__init__(commands=['sell'])
 

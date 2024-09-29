@@ -11,7 +11,7 @@ class OrderGridStrategy(BaseModel):
   id : None
   account_id : int = 0
   user_id : int = 0  # telegram user id
-  symbol : None
+  symbol : str = ''
   initial_base_price : Decimal = Decimal(0)
   latest_base_price : Decimal = Decimal(0)
   price_change_type : None
@@ -44,7 +44,18 @@ class OrderGridStrategy(BaseModel):
     reservedA = sell_quantity * sell_times
     buy_times = ((self.latest_base_price - self.lower_price_limit) / self.every_fall_by).quantize(Decimal('1'), rounding=ROUND_FLOOR)
     lowest_price = self.latest_base_price - self.every_fall_by * buy_times
-    reservedB = (self.latest_base_price + lowest_price) * buy_times / 2
+    reservedB = (self.latest_base_price + lowest_price) * buy_quantity* buy_times / 2
     return (reservedA, reservedB)
-    
+  
+  def calcReserveWithLimitTimes(self, limitTimes: Decimal= Decimal(10)):
+    buy_quantity  = self.order_quantity_per_trade * self.buy_quantity_perc
+    sell_quantity = self.order_quantity_per_trade * self.sell_quantity_perc
+    sell_times = ((self.upper_price_limit - self.latest_base_price) / self.every_rise_by).quantize(Decimal('1'), rounding=ROUND_FLOOR)
+    sell_times = min(sell_times, limitTimes)
+    reservedA = sell_quantity * sell_times
+    buy_times = ((self.latest_base_price - self.lower_price_limit) / self.every_fall_by).quantize(Decimal('1'), rounding=ROUND_FLOOR)
+    buy_times = min(buy_times, limitTimes)
+    lowest_price = self.latest_base_price - self.every_fall_by * buy_times
+    reservedB = (self.latest_base_price -self.every_fall_by + lowest_price) * buy_quantity* buy_times / 2
+    return {self.symbol[1:4]:reservedA, self.symbol[4:]:reservedB}
     

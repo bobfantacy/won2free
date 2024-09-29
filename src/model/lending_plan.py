@@ -34,6 +34,8 @@ class LendingPlan(BaseModel):
         self.create_time = None
         self.update_time = None
         super().__init__(*args, **kwargs)
+        self.rate_limit_high = Decimal(str(self.rate_limit_high))
+        self.rate_limit_low = Decimal(str(self.rate_limit_low))
 
     def modelVersionChange(self):
         attrs = []

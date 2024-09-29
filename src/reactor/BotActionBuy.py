@@ -1,6 +1,15 @@
 from reactor.AbstractAction import AbstractAction
 
 class BotActionBuy(AbstractAction):
+  symbols_supported = ["BTCUSD",
+                      "BTCUST",
+                      'ETHUSD',
+                      'ETHUST',
+                      'SOLUSD',
+                      'SOLUST',
+                      "EOSUSD",
+                      "EOSUST",
+                      'USTUSD']
   def __init__(self):
     super().__init__(commands=['buy'])
 
@@ -11,7 +20,8 @@ class BotActionBuy(AbstractAction):
       self.buffer_message("Invalid command, please use: buy <account_name> <symbol> <amount> <price>")
       return
     symbol = data[0].upper()
-    if(symbol != "BTCUSD" and symbol != "BTCUST" and symbol!='USTUSD' and symbol!='ETH2X:USD' and symbol!='ETHUSD' and symbol!='SOLUSD' and symbol!="EOSUSD"):
+    
+    if(symbol not in self.symbols_supported):
       self.buffer_message("Invalid symbol, please use: BTCUSD BTCUST USTUSD ETH2X:USD ETHUSD EOSUSD or SOLUSD")
       return
     symbol = "t" + symbol

@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 import time
 import random
+from decimal import Decimal
 
 logger = logging.getLogger()
 if logger.handlers:

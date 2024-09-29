@@ -8,6 +8,7 @@ from model.trade_order_stat import TradeOrderStat
 from decimal import Decimal
 import time
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -37,25 +38,29 @@ class BotActionTradeStatusCheck(AbstractAction):
           break
       await self.processOrderExecuted(orders, executedTradeOrder)
     if self.account.funding_back_exchange:
-      await self.makeShortPeriodFunding()
-  async def makeShortPeriodFunding(self):
-    wallet_balances = await self.bfx.rest.get_wallets()
-    funding_wallet_balance = next((w for w in wallet_balances if w.type == 'funding'), None)
-    funding_balance_available = funding_wallet_balance.balance_available
-    symbol = 'fUSD'
+      wallet_available = await self.balanceExchangeAndFundingAmount()
+      for currency in ['USD','UST']:
+        await self.makeShortPeriodFunding(wallet_available, currency)
+
+  async def makeShortPeriodFunding(self, wallet_available, currency = 'USD'):
+    funding_balance_available = wallet_available[currency]
+    symbol = f'f{currency}'
     if funding_balance_available > 150:
       now = datetime.now()
-      start_time = now - timedelta(hours=1)
+      start_time = now - timedelta(minutes=101)
       start_timestamp = int(start_time.timestamp())*1000
       end_timestamp = int(now.timestamp())*1000
       funding_history = await self.bfx.rest.get_funding_offer_history(symbol=symbol, start=start_timestamp, end=end_timestamp)
       if not funding_history:
         books = await self.bfx.rest.get_public_books(symbol, precision="P0", length=100)
         highest_rate = 0
+        highest_period = 2
         for b in books:
-            if b[1] == 2 and b[3] <0 and b[0]>highest_rate:
+            if b[1] in range(2,6) and b[3] <0 and b[0]>highest_rate:
                 highest_rate = b[0]
-        await self.bfx.rest.submit_funding_offer(symbol, 150, highest_rate, 2)
+                highest_period = b[1]
+        if highest_rate > 0:
+          await self.bfx.rest.submit_funding_offer(symbol, 150, highest_rate, highest_period)
   def get_active_grid_stragegy(self, strategy_id):
     filter_lambda = lambda Attr: Attr('id').eq(strategy_id)
     items = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
@@ -64,6 +69,43 @@ class BotActionTradeStatusCheck(AbstractAction):
       return None
     else:
       return items[0]
+  async def balanceExchangeAndFundingAmount(self):
+    tokenReserves = self.get_token_reserves(5)
+    wallet_balances = await self.bfx.rest.get_wallets()
+    wallet_available = {}
+    for currency in ['USD','UST','BTC','ETH','SOL','EOS']:
+      
+
+      exchange_wallet = next((w for w in wallet_balances if w.type == 'exchange' and w.currency==currency), None)
+      funding_wallet = next((w for w in wallet_balances if w.type == 'funding' and w.currency==currency), None)
+      wallet_available[currency] = Decimal(str(funding_wallet.balance_available)) if funding_wallet else Decimal(0)
+      if tokenReserves.get(currency):
+        tokenReserveAmount = tokenReserves[currency]
+        diff = Decimal(str(exchange_wallet.balance)) - tokenReserveAmount
+        if diff > 0 and wallet_available[currency] < 150:
+          time.sleep(2)
+          await self.bfx.rest.submit_wallet_transfer('exchange','funding', currency,currency,diff)
+          wallet_available[currency] = wallet_available[currency] + diff
+        elif diff < 0 and wallet_available[currency] > 0:
+          time.sleep(2)
+          amount_transfer = min(abs(diff), wallet_available[currency])
+          await self.bfx.rest.submit_wallet_transfer('funding' ,'exchange',currency,currency,amount_transfer)
+          wallet_available[currency] = wallet_available[currency] - amount_transfer
+    return wallet_available
+  def get_token_reserves(self,limitTimes=5):
+    strategies = self.storage.loadAllObjects(OrderGridStrategy)
+    tokenAmount = {}
+    for strategy in strategies:
+      if strategy.status =='executing':
+        print(f"id {strategy.id} {strategy.symbol}")
+        reserve = strategy.calcReserveWithLimitTimes(limitTimes)
+        for k,v in reserve.items():
+          if k in tokenAmount:
+            tokenAmount[k] += v
+          else:
+            tokenAmount[k] = v
+            
+    return tokenAmount
   def get_opposite_order(self, orders, order):
     for o in orders:
       if(o.strategy_id == order.strategy_id and o.id != order.id):

@@ -1,7 +1,6 @@
 from reactor.AbstractAction import AbstractAction
 from bfxapi.models.order import OrderType
 from model.lending_plan import LendingPlan
-import math
 import pandas as pd
 import time
 from decimal import Decimal, ROUND_HALF_UP, getcontext, Inexact, Rounded
@@ -15,9 +14,12 @@ class BotActionAutoFundingRate(AbstractAction):
       data = context['data']
       
       lps = self.getActiveLendingPlans()
-      self.buffer_message(f"Auto Setting Funding Plan Rate:")
-      for lp in lps:
-        await self._autoSetFundingRate(lp)
+      if lps:
+        self.buffer_message(f"Auto Setting Funding Plan Rate:")
+        for lp in lps:
+          await self._autoSetFundingRate(lp)
+      else:
+        self.buffer_message(f"No Active Funding Plan!")
   
   async def _autoSetFundingRate(self, lp):
     now = int(round(time.time() * 1000))
@@ -30,12 +32,10 @@ class BotActionAutoFundingRate(AbstractAction):
     start_rate = Decimal(str(high_mean * 100 * float(lp.low_rate)))
     end_rate = Decimal(str(high_mean * 100 * float(lp.high_rate)))
     
-    start_rate = lp.rate_limit_low  if lp.rate_limit_enabled and lp.rate_limit_low  >= start_rate else start_rate
+    start_rate = lp.rate_limit_low  if lp.rate_limit_enabled and (lp.rate_limit_low  >= start_rate or lp.rate_limit_high <start_rate)  else start_rate   
     end_rate   = lp.rate_limit_high if lp.rate_limit_enabled and lp.rate_limit_high <= end_rate   else end_rate
     end_rate   = start_rate if start_rate >= end_rate else end_rate
-    
-    # lp.start_rate = Decimal(str(start_rate))
-    # lp.end_rate   = Decimal(str(end_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
     lp.start_rate = start_rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
     lp.end_rate   = end_rate.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
     lp.rate_gap = Decimal('0')
