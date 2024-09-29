@@ -40,3 +40,5 @@ class BotActionSell(AbstractAction):
       return
 
     await self.sell(symbol, amount, price)
+
+    

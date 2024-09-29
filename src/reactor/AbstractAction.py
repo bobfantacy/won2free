@@ -114,8 +114,6 @@ class AbstractAction(ABC):
         return Notification.from_raw_notification(raw_notification)
   async def update_order(self, order_id, amount, price, strategy_id = 0, oper_count = 0):
     try:
-      # response = await self.bfx.rest.submit_update_order(order_id, price=price, amount=amount,
-      #                                                    aff_code=self.account.affiliate_code)
       response = await self.submit_update_order(int(order_id), price=price, amount=amount)
       if(response.status == 'SUCCESS'):
         o = response.notify_info
@@ -185,6 +183,7 @@ class AbstractAction(ABC):
         self.buffer_message(f"Submit Order: {symbol}, {amount:.6f}, {price:6.0f}")
     except Exception as e:
       logger.error(e)
+      self.buffer_message(f"Submit Order Fail: {symbol}, {amount:.6f}, {price:6.0f} \n {e}")
       raise Exception(e)
   async def buy(self, symbol, amount, price, strategy_id = 0, oper_count = 0):
     if(amount < 0):
@@ -197,6 +196,7 @@ class AbstractAction(ABC):
       raise Exception("amount should be larger then zero")
     logger.info(f"Sell {symbol=}, {amount=}, {price=}")
     await self.submit_order(symbol, -amount, price, strategy_id, oper_count)
+    
   async def getAllActiveFundingOffers(self):
     endpoint = "auth/r/funding/offers"
     offers = await self.bfx.rest.post(endpoint)
