@@ -13,8 +13,6 @@ from model.trade_order_stat import TradeOrderStat
 
 def init_sqs():
   SqsUtils.create_queue(os.getenv('QUEUE_NAME'))
-  # SqsUtils.create_queue('won2free.fifo')
-  # SqsUtils.create_queue('test.fifo')
   
 def init_table():
   storage = Storage()

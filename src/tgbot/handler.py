@@ -53,10 +53,8 @@ def send_command_help(message):
     welcome_text = '''
     Welcome to Trade AI!
     /help *
-    /balance
     /fund *
     /exchange *
-    /on
     '''
     bot.reply_to(message, welcome_text)
     
@@ -136,9 +134,8 @@ def bot_action(message):
             }
         }
         sqs.send_message(event)
-        bot.reply_to(message, f'Send Sqs message to {account_name}')
     except Exception as e:
-        bot.reply_to(message, 'something went wrong!')
+        bot.reply_to(message, f'Something went wrong! {e}')
     
 def webhook(event, context):
     """

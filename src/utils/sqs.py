@@ -40,8 +40,8 @@ class SqsUtils:
                             )
       return response
     except Exception as e:
-      print(e)
       self.logger.error(e)
+      raise e
   
   def receive_messages(self, maxNumberOfMessages=1):
     response = self.queue.receive_messages(
