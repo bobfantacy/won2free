@@ -136,6 +136,7 @@ def bot_action(message):
             }
         }
         sqs.send_message(event)
+        bot.reply_to(message, f'Send Sqs message to {account_name}')
     except Exception as e:
         bot.reply_to(message, 'something went wrong!')
     
