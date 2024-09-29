@@ -108,8 +108,11 @@ def bot_action(message):
         command, account_name, *args = message.text.split()
 
         account = context.accounts.get(account_name)
-        if not account or account.user_id != message.from_user.id:
+        if not account: 
             bot.reply_to(message, f'NOT Found account name: {account_name}')
+            return
+        if account.user_id != message.from_user.id:
+            bot.reply_to(message, f'NOT Authrized to oper {account_name}')
             return
         
         try:
