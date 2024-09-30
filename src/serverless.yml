@@ -189,9 +189,6 @@ functions:
     environment:
       QUEUE_NAME: ${param:QUEUE_NAME}
       TG_TOKEN: ${file(./serverless.env.yml):TG_TOKEN}
-  init:
-    handler: init/lambda_function.lambda_handler
-    timeout: 60
   job-TradeStatusCheck:
     handler: job.jobEvent.TradeStatusCheck
     events:

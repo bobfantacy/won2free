@@ -71,11 +71,6 @@ LAYER_NAME: won2free-python-requirements:1
 # Deploy it!
 $ serverless deploy -s prod
 ```
-## Init the bot 
-``` shell
-$ serverless invoke -s prod --function init
-"The sqs queue and dynomadb tables have inited success"
-```
 
 # References:
 * https://github.com/keithrozario/Klayers

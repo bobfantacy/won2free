@@ -15,56 +15,6 @@ class TestStorage(unittest.TestCase):
         self.storage = Storage()
         self.table_name = 'table_test3'
 
-    def test_base_storage(self):
-        result = self.storage.createTable(self.table_name, pkey='id', pkey_type='N')
-        self.assertTrue(result)  
-        
-        value = {
-          'id': 1,
-          'name' : 'alice',
-          'age' : 10,
-          'sex' : 'male'
-        }
-        self.storage.save(self.table_name, value)
-        
-        values = [
-          {
-            'id': 2,
-            'name' : 'bob',
-            'age' : 12,
-            'sex' : 'female'
-          },
-          {
-            'id': 3,
-            'name' : 'calvin',
-            'age' : 14,
-            'sex' : 'male'
-          },
-        ]
-        
-        self.storage.save(self.table_name, values)
-        
-        items = self.storage.loadAllItems(self.table_name)
-        print(items)
-        self.assertEqual(len(items), 3)
-        
-        filter_lambda = lambda Attr: Attr('name').eq('calvin')
-
-        items = self.storage.loadItem(self.table_name, filter_lambda)
-        self.assertEqual(len(items), 1)
-        
-        filter_lambda = lambda Attr: Attr('age').gte(12)
-
-        items = self.storage.loadItem(self.table_name, filter_lambda)
-        self.assertEqual(len(items), 2)
-        
-        filter_lambda = lambda Attr: Attr('age').gte(12) & Attr('sex').eq('male')
-        items = self.storage.loadItem(self.table_name, filter_lambda)
-        self.assertEqual(len(items), 1)
-        
-        self.storage.unprotectTable(self.table_name)
-        self.storage.deleteTable(self.table_name)
-
     def testCreateTableByCls(self):
       class TestClass():
         __tablename__ = 'table_by_cls5'

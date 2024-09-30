@@ -102,14 +102,13 @@ class Storage():
       else:
         print(f"Unexpected error: {e}")
   
-  def save(self, table_name, value):
+  def _save(self, table_name, value):
     table = self.dynamodb.Table(table_name)
     if self._is_array(value):
       with table.batch_writer() as batch:
         for item in value:
           batch.put_item(Item=item)
     else:
-      
       table.put_item(Item=value)
 
       
@@ -119,17 +118,32 @@ class Storage():
         raise Exception("Object must have __tablename__ attribute")
       
       table_name = objs[0].__tablename__
-      
       table = self.dynamodb.Table(table_name)
-      with table.batch_writer() as batch:
-        for item in objs:
-          batch.put_item(Item=item.to_dict())
-      
-
+      try:
+        with table.batch_writer() as batch:
+          for item in objs:
+            batch.put_item(Item=item.to_dict())
+      except Exception as e:
+        if 'Requested resource not found' == e.response['message']:
+          success = self.createTableByCls(objs[0])
+          if success:
+            table = self.dynamodb.Table(objs[0].__tablename__)
+            with table.batch_writer() as batch:
+              for item in objs:
+                batch.put_item(Item=item.to_dict())
+        else:
+          raise e
   def saveObject(self, obj):
     if not hasattr(obj, "__tablename__"):
       raise Exception("Object must have __tablename__ attribute")
-    self.save(obj.__tablename__, obj.to_dict())
+    try:
+      self._save(obj.__tablename__, obj.to_dict())
+    except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(obj)
+        self._save(obj.__tablename__, obj.to_dict())
+      else:
+        raise e
   def deleteObjectById(self, cls, id):
     if not hasattr(cls, "__tablename__"):
       raise Exception("Object must have __tablename__ attribute")
@@ -142,6 +156,8 @@ class Storage():
       )
       return True
     except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(cls)
       return False
   def deleteObject(self, obj):
     if not hasattr(obj, "__tablename__"):
@@ -155,27 +171,35 @@ class Storage():
       )
       return True
     except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(obj)
       return False
 
   def loadObjects(self, cls, filter_lambda):
     if not hasattr(cls, "__tablename__"):
       raise Exception("Object must have __tablename__ attribute")
-    
-    items = self.loadItem(cls.__tablename__, filter_lambda)
-    
     result = []
-    for item in items:
-      result.append(cls.from_dict(item))
+    try:
+      items = self._loadItem(cls.__tablename__, filter_lambda)
+      for item in items:
+        result.append(cls.from_dict(item))
+    except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(cls)
     return result
   
   def loadAllObjects(self, cls):
     if not hasattr(cls, "__tablename__"):
       raise Exception("Object must have __tablename__ attribute")
-    table = self.dynamodb.Table(cls.__tablename__)
-    response = table.scan()
     result = []
-    for item in  response.get('Items', []):
-      result.append(cls.from_dict(item))
+    try:
+      table = self.dynamodb.Table(cls.__tablename__)
+      response = table.scan()
+      for item in  response.get('Items', []):
+        result.append(cls.from_dict(item))
+    except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(cls)
     return result
 
   def add_attribute(self, table_name, key, new_attribute, new_value):
@@ -203,19 +227,15 @@ class Storage():
       obj.version = obj.version+1
       self.saveObject(obj)
   
-  def loadAllItems(self, table_name):
-    table = self.dynamodb.Table(table_name)
-    response = table.scan()
-    return response.get('Items', [])
-  
-  def loadItem(self, table_name, filter_lambda):
+  def _loadItem(self, table_name, filter_lambda):
     table = self.dynamodb.Table(table_name)
     scan_kwargs = {
         'FilterExpression': filter_lambda(Attr)
     }
     response = table.scan(**scan_kwargs)
     return response.get('Items', [])
-  def loadItemById(self, table_name, id_key, id_val):
+  
+  def _loadItemById(self, table_name, id_key, id_val):
         table = self.dynamodb.Table(table_name)
         response = table.get_item(
             Key={
@@ -226,8 +246,13 @@ class Storage():
   def loadObjectById(self, cls, item_id):
     if not hasattr(cls, "__tablename__"):
       raise Exception("Object must have __tablename__ attribute")
-    item = self.loadItemById(cls.__tablename__, cls.__pkey__, item_id)
-    return cls.from_dict(item) if item else None
+    try:
+      item = self._loadItemById(cls.__tablename__, cls.__pkey__, item_id)
+      return cls.from_dict(item) if item else None
+    except Exception as e:
+      if 'Requested resource not found' == e.response['message']:
+        self.createTableByCls(cls)
+      return None
   
   def _is_array(self, variable):
     return isinstance(variable, list)
