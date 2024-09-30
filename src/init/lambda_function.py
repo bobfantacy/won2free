@@ -11,9 +11,6 @@ from model.funding_offer import FundingOffer
 from model.trade import Trade
 from model.trade_order_stat import TradeOrderStat
 
-def init_sqs():
-  SqsUtils.create_queue(os.getenv('QUEUE_NAME'))
-  
 def init_table():
   storage = Storage()
   storage.createTableByCls(Account)
@@ -27,6 +24,5 @@ def init_table():
   storage.createTableByCls(TradeOrderStat)
   
 def lambda_handler(event, context):
-  init_sqs()
   init_table()
   return "The sqs queue and dynomadb tables have inited success"

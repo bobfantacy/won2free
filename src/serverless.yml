@@ -11,7 +11,7 @@ stages:
       schedule_daily801: cron(1 0 ? * * 2020)
       schedule_daily931: cron(31 1 ? * * 2020)
       schedule_hourly:   cron(1 * ? * * 2020)
-      QUEUE_NAME: test.fifo
+      QUEUE_NAME: "${self:service}-${sls:stage}.fifo"
   prod:
     params:
       schedule_2min: cron(1/2 * ? * * *)
@@ -19,7 +19,6 @@ stages:
       schedule_daily801: cron(1 0 ? * * *)
       schedule_daily931: cron(31 1 ? * * *)
       schedule_hourly:   cron(1 * ? * * *)
-      QUEUE_NAME: won2free.fifo
 provider:
   name: aws
   runtime: python3.10
@@ -53,7 +52,6 @@ provider:
             - sqs:DeleteMessage
             - sqs:CreateQueue
           Resource: "arn:aws:sqs:${aws:region}:${aws:accountId}:${param:QUEUE_NAME}"
-
 functions:
   get_lending_plans:
     handler: httpapi.lending_plan.get_lending_plans
@@ -243,6 +241,13 @@ package:
     - '!serverless.env.yml'
 resources:
   Resources:
+    reactorQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${param:QUEUE_NAME}
+        FifoQueue: true
+        ContentBasedDeduplication: true
+        MessageRetentionPeriod: 600
     GatewayResponse:
       Type: 'AWS::ApiGateway::GatewayResponse'
       Properties:
