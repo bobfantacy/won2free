@@ -47,7 +47,7 @@ class BotActionTradeStatusCheck(AbstractAction):
     symbol = f'f{currency}'
     if funding_balance_available > 150:
       now = datetime.now()
-      start_time = now - timedelta(minutes=101)
+      start_time = now - timedelta(minutes=300)
       start_timestamp = int(start_time.timestamp())*1000
       end_timestamp = int(now.timestamp())*1000
       funding_history = await self.bfx.rest.get_funding_offer_history(symbol=symbol, start=start_timestamp, end=end_timestamp)
@@ -82,15 +82,16 @@ class BotActionTradeStatusCheck(AbstractAction):
       if tokenReserves.get(currency):
         tokenReserveAmount = tokenReserves[currency]
         diff = Decimal(str(exchange_wallet.balance)) - tokenReserveAmount
-        if diff > 0 and wallet_available[currency] < 150:
-          time.sleep(2)
+        if diff > 0.001 and wallet_available[currency] < 150:
+          
           await self.bfx.rest.submit_wallet_transfer('exchange','funding', currency,currency,diff)
           wallet_available[currency] = wallet_available[currency] + diff
-        elif diff < 0 and wallet_available[currency] > 0:
           time.sleep(2)
+        elif diff < -0.001 and wallet_available[currency] > 0:
           amount_transfer = min(abs(diff), wallet_available[currency])
           await self.bfx.rest.submit_wallet_transfer('funding' ,'exchange',currency,currency,amount_transfer)
           wallet_available[currency] = wallet_available[currency] - amount_transfer
+          time.sleep(2)
     return wallet_available
   def get_token_reserves(self,limitTimes=5):
     strategies = self.storage.loadAllObjects(OrderGridStrategy)

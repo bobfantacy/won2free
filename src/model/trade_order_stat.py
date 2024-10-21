@@ -9,42 +9,42 @@ class TradeOrderStat(BaseModel):
     __pkeytype__ = 'N'
     
     def __init__(self, *args, **kwargs):
-        self.id : int = 0
+        self.id : Decimal = Decimal('0') 
         self.account_id : int = 0
         self.user_id : int = 0
         self.symbol = None
         self.firstTradeTime = None
         self.lastTradeTime = None
-        self.total_profit = 0  
-        self.total_fee = 0
-        self.acumulative_amount = 0
-        self.acumulative_buy_amount = 0
-        self.acumulative_sell_amount = 0
-        self.max_buy_amount = 0
-        self.max_buy_cost = 0
-        self.max_sell_amount = 0
-        self.max_sell_cost = 0
+        self.total_profit = Decimal('0') 
+        self.total_fee = Decimal('0')
+        self.acumulative_amount = Decimal('0')
+        self.acumulative_buy_amount = Decimal('0')
+        self.acumulative_sell_amount = Decimal('0')
+        self.max_buy_amount = Decimal('0')
+        self.max_buy_cost = Decimal('0')
+        self.max_sell_amount = Decimal('0')
+        self.max_sell_cost = Decimal('0')
         self.buy_stack = []
         self.sell_stack = []
-        self.count : int = 0
+        self.count : Decimal = Decimal('0')
         self.last_oper_count : int = -1
-        self.last_trade_price : Decimal = Decimal(0)
-        self.buy_total_cost : Decimal = Decimal(0)     # w/o profit
-        self.buy_total_amount : Decimal = Decimal(0)   # w/o profit
-        self.buy_total_fee : Decimal = Decimal(0)      # w/o profit
-        self.buy_average_price : Decimal = Decimal(0)  # w/o profit
-        self.sell_total_cost : Decimal = Decimal(0)    # w/o profit
-        self.sell_total_amount : Decimal = Decimal(0)  # w/o profit
-        self.sell_total_fee : Decimal = Decimal(0)     # w/o profit
-        self.sell_average_price : Decimal = Decimal(0) # w/o profit
-        self.highest_price : Decimal = Decimal(0)
-        self.lowest_price : Decimal = Decimal(2**128)
+        self.last_trade_price : Decimal = Decimal('0')
+        self.buy_total_cost : Decimal = Decimal('0')     # w/o profit
+        self.buy_total_amount : Decimal = Decimal('0')   # w/o profit
+        self.buy_total_fee : Decimal = Decimal('0')      # w/o profit
+        self.buy_average_price : Decimal = Decimal('0')  # w/o profit
+        self.sell_total_cost : Decimal = Decimal('0')    # w/o profit
+        self.sell_total_amount : Decimal = Decimal('0')  # w/o profit
+        self.sell_total_fee : Decimal = Decimal('0')     # w/o profit
+        self.sell_average_price : Decimal = Decimal('0') # w/o profit
+        self.highest_price : Decimal = Decimal('0')
+        self.lowest_price : Decimal = Decimal(str(2**128))
         self.seconds_in_a_year = 365 * 24 * 60 * 60
-        self.apr : Decimal = Decimal(0)
-        self.net_profit : Decimal = Decimal(0)
-        self.profit_a_year : Decimal = Decimal(0)
-        self.total_deposit : Decimal = Decimal(0)
-        self.impermanent_loss : Decimal = Decimal(0)   # w/o profit
+        self.apr : Decimal = Decimal('0')
+        self.net_profit : Decimal = Decimal('0')
+        self.profit_a_year : Decimal = Decimal('0')
+        self.total_deposit : Decimal = Decimal('0')
+        self.impermanent_loss : Decimal = Decimal('0')   # w/o profit
         super().__init__(*args, **kwargs)
     
     def _buy_stack_push(self, price, amount, fee):
@@ -57,6 +57,7 @@ class TradeOrderStat(BaseModel):
         self.buy_total_fee += fee
         self.buy_average_price = self.buy_total_cost / self.buy_total_amount
         self.lowest_price = min(self.lowest_price, price)
+        self.highest_price = max(self.highest_price, price)
         
         
     def _buy_stack_pop(self):
@@ -68,7 +69,7 @@ class TradeOrderStat(BaseModel):
         if self.buy_total_amount > 0:
             self.buy_average_price = self.buy_total_cost / self.buy_total_amount
         else:
-            self.buy_average_price = Decimal(0)
+            self.buy_average_price = Decimal('0')
         
         return (price, amount, fee)
     
@@ -81,6 +82,7 @@ class TradeOrderStat(BaseModel):
         self.sell_total_amount += amount
         self.sell_total_fee += fee
         self.sell_average_price = self.sell_total_cost / self.sell_total_amount
+        self.lowest_price = min(self.lowest_price, price)
         self.highest_price = max(self.highest_price, price)
 
     def _sell_stack_pop(self):
@@ -92,7 +94,7 @@ class TradeOrderStat(BaseModel):
         if self.sell_total_amount > 0:
             self.sell_average_price = self.sell_total_cost / self.sell_total_amount
         else:
-            self.sell_average_price = Decimal(0)
+            self.sell_average_price = Decimal('0')
         return (price, amount, fee)
     def report(self):
         return f'''

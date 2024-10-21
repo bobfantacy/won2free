@@ -180,10 +180,10 @@ class AbstractAction(ABC):
         order.strategy_id = strategy_id
         order.oper_count = oper_count
         self.storage.saveObject(order)
-        self.buffer_message(f"Submit Order: {symbol}, {amount:.6f}, {price:6.0f}")
+        self.buffer_message(f"Submit Order: {symbol}, {amount:.6f}, {price:6.3f}")
     except Exception as e:
       logger.error(e)
-      self.buffer_message(f"Submit Order Fail: {symbol}, {amount:.6f}, {price:6.0f} \n {e}")
+      self.buffer_message(f"Submit Order Fail: {symbol}, {amount:.6f}, {price:6.3} \n {e}")
       raise Exception(e)
   async def buy(self, symbol, amount, price, strategy_id = 0, oper_count = 0):
     if(amount < 0):
