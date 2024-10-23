@@ -41,26 +41,53 @@ class BotActionTradeStatusCheck(AbstractAction):
       wallet_available = await self.balanceExchangeAndFundingAmount()
       for currency in ['USD','UST']:
         await self.makeShortPeriodFunding(wallet_available, currency)
+  async def shouldMakeFundingOffer(self, symbol, funding_balance_available):
+    if funding_balance_available < 150:
+        return False
+    now = datetime.now()
+    tow_day_before = now - timedelta(days=2)
+    funding_loans = await self.bfx.rest.get_funding_loans(symbol=symbol)
+    funding_credit = await self.bfx.rest.get_funding_credits(symbol=symbol)
 
+    order_count_in_2_days = 0
+    latest_offer_time = tow_day_before
+    for loan in funding_loans:
+        mts_create = loan.mts_create
+        create_time = datetime.fromtimestamp(mts_create/1000)
+        if create_time > tow_day_before:
+            order_count_in_2_days += 1
+        if create_time > latest_offer_time:
+            latest_offer_time = create_time
+    for credit in funding_credit:
+        mts_create = credit.mts_create
+        create_time = datetime.fromtimestamp(mts_create/1000)
+        if create_time > tow_day_before:
+            order_count_in_2_days += 1
+        if create_time > latest_offer_time:
+            latest_offer_time = create_time
+            
+    portions = funding_balance_available / 150 + order_count_in_2_days
+    minute_slots = int(60*24*2 / portions)
+    start_time = now - timedelta(minutes=minute_slots)
+
+    if start_time > latest_offer_time:
+        return True
+    else:
+        return False
+      
   async def makeShortPeriodFunding(self, wallet_available, currency = 'USD'):
     funding_balance_available = wallet_available[currency]
     symbol = f'f{currency}'
-    if funding_balance_available > 150:
-      now = datetime.now()
-      start_time = now - timedelta(minutes=300)
-      start_timestamp = int(start_time.timestamp())*1000
-      end_timestamp = int(now.timestamp())*1000
-      funding_history = await self.bfx.rest.get_funding_offer_history(symbol=symbol, start=start_timestamp, end=end_timestamp)
-      if not funding_history:
-        books = await self.bfx.rest.get_public_books(symbol, precision="P0", length=100)
-        highest_rate = 0
-        highest_period = 2
-        for b in books:
-            if b[1] in range(2,6) and b[3] <0 and b[0]>highest_rate:
-                highest_rate = b[0]
-                highest_period = b[1]
-        if highest_rate > 0:
-          await self.bfx.rest.submit_funding_offer(symbol, 150, highest_rate, highest_period)
+    if await self.shouldMakeFundingOffer(symbol, funding_balance_available):
+      books = await self.bfx.rest.get_public_books(symbol, precision="P0", length=100)
+      highest_rate = 0
+      highest_period = 2
+      for b in books:
+          if b[1] in range(2,6) and b[3] <0 and b[0]>highest_rate:
+              highest_rate = b[0]
+              highest_period = b[1]
+      if highest_rate > 0:
+        await self.bfx.rest.submit_funding_offer(symbol, 150, highest_rate, highest_period)
   def get_active_grid_stragegy(self, strategy_id):
     filter_lambda = lambda Attr: Attr('id').eq(strategy_id)
     items = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
@@ -94,7 +121,8 @@ class BotActionTradeStatusCheck(AbstractAction):
           time.sleep(2)
     return wallet_available
   def get_token_reserves(self,limitTimes=5):
-    strategies = self.storage.loadAllObjects(OrderGridStrategy)
+    filter_lambda = lambda Attr: Attr('account_id').eq(self.account.id)
+    strategies = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
     tokenAmount = {}
     for strategy in strategies:
       if strategy.status =='executing':
