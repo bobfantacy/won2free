@@ -78,6 +78,7 @@ def send_exchange(message):
     /ResumeGrid *
     /TradeStatusCheck *
     /TradeReport *
+    /ShiftUp *
     '''
     bot.reply_to(message, exchange_message)
     
@@ -91,6 +92,7 @@ def echo_message(message):
                                'AutoFundingRate',
                                'ReArrangeOffer',
                                'TradeStatusCheck',
+                               'ShiftUp',
                                'NewLendingPlan',
                                'TestDict',
                                'TradeReport',

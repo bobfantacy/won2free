@@ -33,6 +33,8 @@ class OrderGridStrategy(BaseModel):
   created_at : None
   updated_at : None
   comments : None
+  shift_up_enabled: bool = False
+  shift_up_checked: bool = False
   
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)

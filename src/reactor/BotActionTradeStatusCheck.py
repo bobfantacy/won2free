@@ -8,7 +8,6 @@ from model.trade_order_stat import TradeOrderStat
 from decimal import Decimal
 import time
 import logging
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +36,33 @@ class BotActionTradeStatusCheck(AbstractAction):
           executedTradeOrder.user_id = order.user_id
           break
       await self.processOrderExecuted(orders, executedTradeOrder)
+    await self.shiftUpCheck()
     if self.account.funding_back_exchange:
       wallet_available = await self.balanceExchangeAndFundingAmount()
       for currency in ['USD','UST']:
         await self.makeShortPeriodFunding(wallet_available, currency)
+    
+  async def shiftUpCheck(self):
+    filter_lambda = lambda Attr: Attr('status').eq('executing') & Attr('shift_up_enabled').eq(True) & Attr('shift_up_checked').eq(True) & Attr('account_id').eq(self.account.id) & Attr('user_id').eq(self.account.user_id)
+    grids = self.storage.loadObjects(OrderGridStrategy, filter_lambda)
+    for grid in grids:
+      latest_high_public = Decimal(str(await self.get_latest_high(grid.symbol)))
+      if latest_high_public - grid.latest_base_price > grid.every_rise_by: 
+        filter_lambda = lambda Attr: Attr('strategy_id').eq(grid.id) & Attr('account_id').eq(self.account.id) & Attr('user_id').eq(self.account.user_id)
+        orders = self.storage.loadObjects(TradeOrder, filter_lambda)
+        if orders and len(orders)==1:
+          o = orders[0]
+          await self.update_order(o.id, o.amount, grid.latest_base_price, grid.id, grid.oper_count)
+          grid.latest_base_price = grid.latest_base_price + grid.every_rise_by
+          grid.upper_price_limit = grid.latest_base_price
+          self.storage.saveObject(grid)
+          self.buffer_message(f"Grid Strategy {grid.id} Shift Up to {grid.latest_base_price}")
+
+  async def get_latest_high(self, symbol):
+    now = int(datetime.now().timestamp()*1000)
+    candles = await self.bfx.rest.get_public_candles(symbol, 0, now, tf='5m',limit=1)
+    return candles[0][3]
+  
   async def shouldMakeFundingOffer(self, symbol, funding_balance_available):
     if funding_balance_available < 150:
         return False
@@ -109,12 +131,11 @@ class BotActionTradeStatusCheck(AbstractAction):
       if tokenReserves.get(currency):
         tokenReserveAmount = tokenReserves[currency]
         diff = Decimal(str(exchange_wallet.balance)) - tokenReserveAmount
-        if diff > 0.001 and wallet_available[currency] < 150:
-          
+        if diff > 0.00001:
           await self.bfx.rest.submit_wallet_transfer('exchange','funding', currency,currency,diff)
           wallet_available[currency] = wallet_available[currency] + diff
           time.sleep(2)
-        elif diff < -0.001 and wallet_available[currency] > 0:
+        elif diff < -0.00001 and wallet_available[currency] > 0:
           amount_transfer = min(abs(diff), wallet_available[currency])
           await self.bfx.rest.submit_wallet_transfer('funding' ,'exchange',currency,currency,amount_transfer)
           wallet_available[currency] = wallet_available[currency] - amount_transfer
@@ -126,7 +147,7 @@ class BotActionTradeStatusCheck(AbstractAction):
     tokenAmount = {}
     for strategy in strategies:
       if strategy.status =='executing':
-        print(f"id {strategy.id} {strategy.symbol}")
+        # print(f"id {strategy.id} {strategy.symbol}")
         reserve = strategy.calcReserveWithLimitTimes(limitTimes)
         for k,v in reserve.items():
           if k in tokenAmount:
@@ -177,13 +198,15 @@ class BotActionTradeStatusCheck(AbstractAction):
     self.buffer_message(f"Grid Strategy {executedTradeOrder.strategy_id} TRIGGERED! Oper Count: {executedTradeOrder.oper_count+1} ")
     
     grid.latest_base_price = executedTradeOrder.price_avg
-    
+    grid.shift_up_checked = False
     if grid.price_change_type == 'difference':
       upper_price = grid.latest_base_price + grid.every_rise_by
       lower_price = grid.latest_base_price - grid.every_fall_by
       
       if(upper_price > grid.upper_price_limit or lower_price < grid.lower_price_limit):
         self.buffer_message(f"Price limit reached, upper: {upper_price} lower: {lower_price}")
+        if (grid.shift_up_enabled):
+          grid.shift_up_checked = True
         if(grid.stop_on_failure):
           grid.status = 'stop'
           grid.oper_count = grid.oper_count + 1
