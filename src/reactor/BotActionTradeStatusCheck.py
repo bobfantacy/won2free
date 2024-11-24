@@ -130,12 +130,12 @@ class BotActionTradeStatusCheck(AbstractAction):
       wallet_available[currency] = Decimal(str(funding_wallet.balance_available)) if funding_wallet else Decimal(0)
       if tokenReserves.get(currency):
         tokenReserveAmount = tokenReserves[currency]
-        diff = Decimal(str(exchange_wallet.balance)) - tokenReserveAmount
-        if diff > 0.00001:
+        diff = Decimal(str(exchange_wallet.balance)) - tokenReserveAmount * Decimal(str('1.001'))
+        if diff > Decimal(str('0.00001')):
           await self.bfx.rest.submit_wallet_transfer('exchange','funding', currency,currency,diff)
           wallet_available[currency] = wallet_available[currency] + diff
           time.sleep(2)
-        elif diff < -0.00001 and wallet_available[currency] > 0:
+        elif diff < Decimal(str('-0.00001')) and wallet_available[currency] > 0:
           amount_transfer = min(abs(diff), wallet_available[currency])
           await self.bfx.rest.submit_wallet_transfer('funding' ,'exchange',currency,currency,amount_transfer)
           wallet_available[currency] = wallet_available[currency] - amount_transfer
